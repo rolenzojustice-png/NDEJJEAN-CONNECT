@@ -24,6 +24,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
+    image TEXT,
     author_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users(id)
@@ -34,6 +35,7 @@ db.exec(`
     post_id INTEGER,
     user_id INTEGER,
     content TEXT NOT NULL,
+    image TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -67,7 +69,37 @@ db.exec(`
     FOREIGN KEY (sender_id) REFERENCES users(id),
     FOREIGN KEY (receiver_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    link TEXT,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    token TEXT NOT NULL,
+    expires_at DATETIME NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS user_settings (
+    user_id INTEGER PRIMARY KEY,
+    notify_messages INTEGER DEFAULT 1,
+    notify_events INTEGER DEFAULT 1,
+    notify_blog INTEGER DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
+
+// Migration: Add image columns if they don't exist
+try { db.exec("ALTER TABLE posts ADD COLUMN image TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE comments ADD COLUMN image TEXT"); } catch (e) {}
 
 // Seed Admin if not exists
 const adminExists = db.prepare("SELECT * FROM users WHERE role = 'admin'").get();
@@ -92,20 +124,41 @@ if (!adminExists) {
     "2026-03-15",
     "School Main Field"
   );
+
+  // Initialize settings for admin
+  db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(1);
+}
+
+function createNotification(db: any, userId: number, type: string, content: string, link: string) {
+  const settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(userId);
+  if (!settings) return;
+
+  let shouldNotify = false;
+  if (type === 'message' && settings.notify_messages) shouldNotify = true;
+  if (type === 'event' && settings.notify_events) shouldNotify = true;
+  if (type === 'comment' && settings.notify_blog) shouldNotify = true;
+
+  if (shouldNotify) {
+    db.prepare("INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)").run(userId, type, content, link);
+  }
 }
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Auth Routes
   app.post("/api/auth/signup", (req, res) => {
     const { name, email, password, role } = req.body;
     try {
       const result = db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(name, email, password, role || 'student');
-      const user = db.prepare("SELECT id, name, email, role FROM users WHERE id = ?").get(result.lastInsertRowid);
+      const userId = result.lastInsertRowid;
+      // Initialize settings
+      db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(userId);
+      const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE id = ?").get(userId);
       res.json(user);
     } catch (e) {
       res.status(400).json({ error: "Email already exists" });
@@ -114,12 +167,39 @@ async function startServer() {
 
   app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
-    const user = db.prepare("SELECT id, name, email, role FROM users WHERE email = ? AND password = ?").get(email, password);
+    const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE email = ? AND password = ?").get(email, password);
     if (user) {
       res.json(user);
     } else {
       res.status(401).json({ error: "Invalid credentials" });
     }
+  });
+
+  app.post("/api/auth/forgot-password", (req, res) => {
+    const { email } = req.body;
+    const user = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+
+    db.prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)").run(email, token, expiresAt);
+
+    // In a real app, send email. Here we just return the token for the demo.
+    console.log(`Password reset token for ${email}: ${token}`);
+    res.json({ message: "Reset link sent to your email", token }); // Token returned for demo purposes
+  });
+
+  app.post("/api/auth/reset-password", (req, res) => {
+    const { token, password } = req.body;
+    const reset = db.prepare("SELECT email FROM password_resets WHERE token = ? AND expires_at > ?").get(token, new Date().toISOString());
+    
+    if (!reset) return res.status(400).json({ error: "Invalid or expired token" });
+
+    db.prepare("UPDATE users SET password = ? WHERE email = ?").run(password, reset.email);
+    db.prepare("DELETE FROM password_resets WHERE email = ?").run(reset.email);
+
+    res.json({ success: true, message: "Password updated successfully" });
   });
 
   // Blog Routes
@@ -136,12 +216,21 @@ async function startServer() {
   });
 
   app.post("/api/posts", (req, res) => {
-    const { title, content, author_id } = req.body;
+    const { title, content, image, author_id } = req.body;
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(author_id);
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can post" });
     
-    const result = db.prepare("INSERT INTO posts (title, content, author_id) VALUES (?, ?, ?)").run(title, content, author_id);
+    const result = db.prepare("INSERT INTO posts (title, content, image, author_id) VALUES (?, ?, ?, ?)").run(title, content, image, author_id);
     res.json({ id: result.lastInsertRowid });
+  });
+
+  app.put("/api/posts/:id", (req, res) => {
+    const { title, content, image, author_id } = req.body;
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(author_id);
+    if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can edit posts" });
+    
+    db.prepare("UPDATE posts SET title = ?, content = ?, image = ? WHERE id = ?").run(title, content, image, req.params.id);
+    res.json({ success: true });
   });
 
   app.get("/api/posts/:id/comments", (req, res) => {
@@ -156,8 +245,16 @@ async function startServer() {
   });
 
   app.post("/api/posts/:id/comments", (req, res) => {
-    const { user_id, content } = req.body;
-    db.prepare("INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)").run(req.params.id, user_id, content);
+    const { user_id, content, image } = req.body;
+    db.prepare("INSERT INTO comments (post_id, user_id, content, image) VALUES (?, ?, ?, ?)").run(req.params.id, user_id, content, image);
+    
+    // Notify post author
+    const post = db.prepare("SELECT author_id, title FROM posts WHERE id = ?").get(req.params.id);
+    const user = db.prepare("SELECT name FROM users WHERE id = ?").get(user_id);
+    if (post && post.author_id !== user_id) {
+      createNotification(db, post.author_id, 'comment', `${user.name} commented on your post: ${post.title}`, `blog?post_id=${req.params.id}`);
+    }
+    
     res.json({ success: true });
   });
 
@@ -176,6 +273,42 @@ async function startServer() {
   app.get("/api/users", (req, res) => {
     const users = db.prepare("SELECT id, name, email, role FROM users").all();
     res.json(users);
+  });
+
+  app.delete("/api/users/:id", (req, res) => {
+    const { admin_id } = req.query;
+    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    if (admin?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+
+    db.prepare("DELETE FROM users WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.patch("/api/users/:id/role", (req, res) => {
+    const { admin_id, role } = req.body;
+    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    if (admin?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+
+    db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
+    res.json({ success: true });
+  });
+
+  app.put("/api/users/:id/profile", (req, res) => {
+    const { name, avatar } = req.body;
+    db.prepare("UPDATE users SET name = ?, avatar = ? WHERE id = ?").run(name, avatar, req.params.id);
+    const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE id = ?").get(req.params.id);
+    res.json(user);
+  });
+
+  app.delete("/api/posts/:id", (req, res) => {
+    const { admin_id } = req.query;
+    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    if (admin?.role !== 'admin' && admin?.role !== 'teacher') return res.status(403).json({ error: "Unauthorized" });
+
+    db.prepare("DELETE FROM posts WHERE id = ?").run(req.params.id);
+    db.prepare("DELETE FROM comments WHERE post_id = ?").run(req.params.id);
+    db.prepare("DELETE FROM likes WHERE post_id = ?").run(req.params.id);
+    res.json({ success: true });
   });
 
   // Messaging Routes
@@ -210,6 +343,11 @@ async function startServer() {
   app.post("/api/messages", (req, res) => {
     const { sender_id, receiver_id, content } = req.body;
     const result = db.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)").run(sender_id, receiver_id, content);
+    
+    // Notify receiver
+    const sender = db.prepare("SELECT name FROM users WHERE id = ?").get(sender_id);
+    createNotification(db, receiver_id, 'message', `New message from ${sender.name}`, `messages?user_id=${sender_id}`);
+    
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -225,6 +363,13 @@ async function startServer() {
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can create events" });
 
     const result = db.prepare("INSERT INTO events (title, description, date, time, location) VALUES (?, ?, ?, ?, ?)").run(title, description, date, time, location);
+    
+    // Notify all users about new event
+    const users = db.prepare("SELECT id FROM users WHERE id != ?").all(user_id);
+    users.forEach(u => {
+      createNotification(db, u.id, 'event', `New school event: ${title}`, `events?event_id=${result.lastInsertRowid}`);
+    });
+
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -243,6 +388,41 @@ async function startServer() {
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can delete events" });
 
     db.prepare("DELETE FROM events WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  });
+
+  // Notifications Routes
+  app.get("/api/notifications/:userId", (req, res) => {
+    const notifications = db.prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").all(req.params.userId);
+    res.json(notifications);
+  });
+
+  app.get("/api/settings/:userId", (req, res) => {
+    let settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(req.params.userId);
+    if (!settings) {
+      db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(req.params.userId);
+      settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(req.params.userId);
+    }
+    res.json(settings);
+  });
+
+  app.put("/api/settings/:userId", (req, res) => {
+    const { notify_messages, notify_events, notify_blog } = req.body;
+    db.prepare(`
+      UPDATE user_settings 
+      SET notify_messages = ?, notify_events = ?, notify_blog = ? 
+      WHERE user_id = ?
+    `).run(notify_messages ? 1 : 0, notify_events ? 1 : 0, notify_blog ? 1 : 0, req.params.userId);
+    res.json({ success: true });
+  });
+
+  app.post("/api/notifications/:id/read", (req, res) => {
+    db.prepare("UPDATE notifications SET is_read = 1 WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.post("/api/notifications/read-all/:userId", (req, res) => {
+    db.prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?").run(req.params.userId);
     res.json({ success: true });
   });
 

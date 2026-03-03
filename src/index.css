@@ -5,30 +5,39 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
   
-  --color-school-primary: #1e4d2b;
-  --color-school-secondary: #facc15;
-  --color-school-accent: #ffffff;
+  --color-school-primary:#2E235E;
+  --color-school-secondary: #FFD700;
+  --color-school-accent: #F9FAFBf;
+  --color-notif-badge: #e11d48;
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-school-primary/10 selection:text-school-primary;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-semibold tracking-tight;
+    @apply font-display font-bold tracking-tight text-slate-900;
   }
 }
 
 .glass-card {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+  @apply bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300;
 }
 
 .btn-primary {
-  @apply bg-school-primary text-white px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90 active:scale-95 disabled:opacity-50;
+  @apply bg-school-primary text-white px-6 py-3 rounded-2xl font-bold transition-all hover:shadow-lg hover:shadow-school-primary/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2;
 }
 
 .btn-secondary {
-  @apply bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-lg font-medium transition-all hover:bg-slate-50 active:scale-95;
+  @apply bg-white text-slate-700 border border-slate-200 px-6 py-3 rounded-2xl font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95 flex items-center justify-center gap-2;
+}
+
+.notif-item {
+  @apply p-4 rounded-2xl transition-all hover:bg-slate-50 border border-transparent hover:border-slate-100 cursor-pointer;
+}
+
+.notif-item.unread {
+  @apply bg-school-primary/5 border-school-primary/10;
 }
 

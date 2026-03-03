@@ -10,6 +10,7 @@ export interface Post {
   id: number;
   title: string;
   content: string;
+  image?: string;
   author_id: number;
   author_name: string;
   created_at: string;
@@ -23,6 +24,7 @@ export interface Comment {
   user_id: number;
   user_name: string;
   content: string;
+  image?: string;
   created_at: string;
 }
 
@@ -50,4 +52,14 @@ export interface Conversation {
   other_user_role: string;
   last_message: string;
   last_message_at: string;
+}
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  type: 'message' | 'event' | 'comment';
+  content: string;
+  link: string;
+  is_read: number;
+  created_at: string;
 }
