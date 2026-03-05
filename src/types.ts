@@ -4,6 +4,8 @@ export interface User {
   email: string;
   role: 'student' | 'parent' | 'teacher' | 'admin';
   avatar?: string;
+  bio?: string;
+  phone?: string;
 }
 
 export interface Post {

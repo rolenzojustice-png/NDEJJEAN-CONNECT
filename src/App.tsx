@@ -28,7 +28,9 @@ import {
   Settings as SettingsIcon,
   BarChart,
   CheckCheck,
-  ExternalLink
+  ExternalLink,
+  Phone,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -184,8 +186,13 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-              <div className="w-8 h-8 bg-school-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="text-white w-5 h-5" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img 
+                  src="https://images.seeklogo.com/logo-png/55/2/ndejje-senior-secondary-school-bombo-logo-png_seeklogo-556141.png?v=1958513566915908752" 
+                  alt="Ndejje SSS Logo" 
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <span className="text-xl font-bold font-display text-school-primary">
                 THEE NDEJJEAN CONNECT
@@ -1923,12 +1930,16 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       setEditedName(user.name);
       setAvatar(user.avatar || '');
+      setBio(user.bio || '');
+      setPhone(user.phone || '');
     }
   }, [user]);
 
@@ -1950,7 +1961,7 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
       const res = await fetch(`/api/users/${user.id}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editedName, avatar })
+        body: JSON.stringify({ name: editedName, avatar, bio, phone })
       });
       if (res.ok) {
         const updatedUser = await res.json();
@@ -2015,6 +2026,8 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
                     setIsEditing(false);
                     setEditedName(user.name);
                     setAvatar(user.avatar || '');
+                    setBio(user.bio || '');
+                    setPhone(user.phone || '');
                   }}
                   className="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
                 >
@@ -2049,7 +2062,50 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
                 <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
               )}
               <p className="text-slate-500 mt-1">{user.email}</p>
-              <div className="mt-3 flex gap-2">
+              
+              {isEditing ? (
+                <div className="mt-4 space-y-4 max-w-md">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="tel" 
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="+256 ..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2 focus:ring-2 focus:ring-school-primary outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Bio / About Me</label>
+                    <textarea 
+                      value={bio}
+                      onChange={e => setBio(e.target.value)}
+                      placeholder="Tell us about yourself..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-school-primary outline-none min-h-[100px]"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {user.phone && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Phone className="w-4 h-4 text-school-primary" />
+                      <span className="text-sm">{user.phone}</span>
+                    </div>
+                  )}
+                  {user.bio && (
+                    <div className="flex items-start gap-2 text-slate-600 max-w-lg">
+                      <Info className="w-4 h-4 text-school-primary mt-1 flex-shrink-0" />
+                      <p className="text-sm leading-relaxed">{user.bio}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-6 flex gap-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                   user.role === 'admin' ? 'bg-red-100 text-red-700' : 
                   user.role === 'teacher' ? 'bg-school-primary/10 text-school-primary' :
@@ -2155,8 +2211,13 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
     <div className="max-w-md mx-auto py-12">
       <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-school-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="text-white w-8 h-8" />
+          <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="https://images.seeklogo.com/logo-png/55/2/ndejje-senior-secondary-school-bombo-logo-png_seeklogo-556141.png?v=1958513566915908752" 
+              alt="Ndejje SSS Logo" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <h2 className="text-3xl font-bold">
             {mode === 'login' ? 'Welcome Back' : 
@@ -2335,10 +2396,49 @@ const ScrollToTop = () => {
   );
 };
 
+const Toasts = ({ toasts, onRemove }: { toasts: any[], onRemove: (id: number) => void }) => {
+  return (
+    <div className="fixed bottom-8 left-8 z-[100] flex flex-col gap-3">
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, x: -20, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -20, scale: 0.9 }}
+            className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 flex items-start gap-4 min-w-[300px] max-w-md relative group"
+          >
+            <div className={`p-2 rounded-xl flex-shrink-0 ${
+              toast.type === 'message' ? 'bg-blue-100 text-blue-600' :
+              toast.type === 'event' ? 'bg-amber-100 text-amber-600' :
+              'bg-school-primary/10 text-school-primary'
+            }`}>
+              {toast.type === 'message' ? <MessageSquare className="w-5 h-5" /> :
+               toast.type === 'event' ? <Calendar className="w-5 h-5" /> :
+               <Bell className="w-5 h-5" />}
+            </div>
+            <div className="flex-1 pr-6">
+              <h4 className="font-bold text-sm mb-1">New Update</h4>
+              <p className="text-xs text-slate-600 leading-relaxed">{toast.content}</p>
+            </div>
+            <button 
+              onClick={() => onRemove(toast.id)}
+              className="absolute top-2 right-2 p-1 text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [toasts, setToasts] = useState<any[]>([]);
   const [deepLink, setDeepLink] = useState<{ tab: string, params: Record<string, string> } | null>(null);
 
   useEffect(() => {
@@ -2349,8 +2449,33 @@ export default function App() {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 10000);
-      return () => clearInterval(interval);
+      
+      // WebSocket Connection
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}`);
+      
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'auth', userId: user.id }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'notification') {
+          const newToast = {
+            id: Date.now(),
+            ...data.data
+          };
+          setToasts(prev => [newToast, ...prev]);
+          fetchNotifications();
+          
+          // Auto remove toast after 5 seconds
+          setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== newToast.id));
+          }, 5000);
+        }
+      };
+
+      return () => ws.close();
     }
   }, [user]);
 
@@ -2439,14 +2564,20 @@ export default function App() {
       </main>
 
       <ScrollToTop />
+      <Toasts toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       <footer className="bg-school-primary text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-school-secondary rounded flex items-center justify-center">
-                  <BookOpen className="text-school-primary w-5 h-5" />
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <img 
+                    src="https://images.seeklogo.com/logo-png/55/2/ndejje-senior-secondary-school-bombo-logo-png_seeklogo-556141.png?v=1958513566915908752" 
+                    alt="Ndejje SSS Logo" 
+                    className="w-full h-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
                 <span className="text-xl font-bold font-display">Ndejje Senior Secondary School</span>
               </div>

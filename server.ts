@@ -3,6 +3,8 @@ import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { WebSocketServer, WebSocket } from "ws";
+import { createServer } from "http";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +19,9 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     role TEXT DEFAULT 'user',
-    avatar TEXT
+    avatar TEXT,
+    bio TEXT,
+    phone TEXT
   );
 
   CREATE TABLE IF NOT EXISTS posts (
@@ -100,6 +104,8 @@ db.exec(`
 // Migration: Add image columns if they don't exist
 try { db.exec("ALTER TABLE posts ADD COLUMN image TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE comments ADD COLUMN image TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN bio TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT"); } catch (e) {}
 
 // Seed Admin if not exists
 const adminExists = db.prepare("SELECT * FROM users WHERE role = 'admin'").get();
@@ -129,6 +135,8 @@ if (!adminExists) {
   db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(1);
 }
 
+const clients = new Map<number, WebSocket>();
+
 function createNotification(db: any, userId: number, type: string, content: string, link: string) {
   const settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(userId);
   if (!settings) return;
@@ -140,12 +148,41 @@ function createNotification(db: any, userId: number, type: string, content: stri
 
   if (shouldNotify) {
     db.prepare("INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)").run(userId, type, content, link);
+    
+    // Real-time WebSocket notification
+    const client = clients.get(userId);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: 'notification',
+        data: { type, content, link, created_at: new Date().toISOString() }
+      }));
+    }
   }
 }
 
 async function startServer() {
   const app = express();
+  const server = createServer(app);
+  const wss = new WebSocketServer({ server });
   const PORT = 3000;
+
+  wss.on('connection', (ws) => {
+    let currentUserId: number | null = null;
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data.type === 'auth' && data.userId) {
+          currentUserId = data.userId;
+          clients.set(currentUserId!, ws);
+        }
+      } catch (e) {}
+    });
+
+    ws.on('close', () => {
+      if (currentUserId) clients.delete(currentUserId);
+    });
+  });
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -158,7 +195,7 @@ async function startServer() {
       const userId = result.lastInsertRowid;
       // Initialize settings
       db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(userId);
-      const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE id = ?").get(userId);
+      const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE id = ?").get(userId);
       res.json(user);
     } catch (e) {
       res.status(400).json({ error: "Email already exists" });
@@ -167,7 +204,7 @@ async function startServer() {
 
   app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
-    const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE email = ? AND password = ?").get(email, password);
+    const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE email = ? AND password = ?").get(email, password);
     if (user) {
       res.json(user);
     } else {
@@ -294,9 +331,9 @@ async function startServer() {
   });
 
   app.put("/api/users/:id/profile", (req, res) => {
-    const { name, avatar } = req.body;
-    db.prepare("UPDATE users SET name = ?, avatar = ? WHERE id = ?").run(name, avatar, req.params.id);
-    const user = db.prepare("SELECT id, name, email, role, avatar FROM users WHERE id = ?").get(req.params.id);
+    const { name, avatar, bio, phone } = req.body;
+    db.prepare("UPDATE users SET name = ?, avatar = ?, bio = ?, phone = ? WHERE id = ?").run(name, avatar, bio, phone, req.params.id);
+    const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE id = ?").get(req.params.id);
     res.json(user);
   });
 
@@ -440,7 +477,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
