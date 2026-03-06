@@ -59,9 +59,18 @@ export interface Conversation {
 export interface Notification {
   id: number;
   user_id: number;
-  type: 'message' | 'event' | 'comment';
+  type: 'message' | 'event' | 'comment' | 'announcement';
   content: string;
   link: string;
   is_read: number;
+  created_at: string;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  tag: string;
+  icon: string;
   created_at: string;
 }

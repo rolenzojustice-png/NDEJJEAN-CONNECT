@@ -14,6 +14,7 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  ArrowLeft,
   ChevronUp,
   ChevronDown,
   Send,
@@ -30,9 +31,14 @@ import {
   CheckCheck,
   ExternalLink,
   Phone,
-  Info
+  Info,
+  ScrollText,
+  Moon,
+  Sun,
+  MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Forum } from './components/Forum';
 import { 
   format, 
   startOfMonth, 
@@ -46,7 +52,7 @@ import {
   subMonths,
   parseISO
 } from 'date-fns';
-import { User, Post, SchoolEvent, Comment, Message, Conversation, Notification } from './types';
+import { User, Post, SchoolEvent, Comment, Message, Conversation, Notification, Announcement } from './types';
 
 // Components
 const NotificationDropdown = ({ 
@@ -152,7 +158,69 @@ const NotificationDropdown = ({
   );
 };
 
-const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMarkAsRead, onMarkAllAsRead, onDeepLink }: { 
+const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMode }: { 
+  label: string, 
+  icon: any, 
+  items: { id: string, label: string, icon: any }[],
+  activeTab: string,
+  setActiveTab: (tab: string) => void,
+  darkMode: boolean
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isActive = items.some(item => item.id === activeTab);
+
+  return (
+    <div className="relative">
+      <button
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+          isActive 
+            ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+            : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+        }`}
+      >
+        <Icon className="w-4 h-4" />
+        {label}
+        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+            className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-white/10 z-50 overflow-hidden p-1"
+          >
+            {items.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === item.id 
+                    ? 'text-school-primary bg-school-primary/5 dark:text-school-secondary dark:bg-school-secondary/5' 
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMarkAsRead, onMarkAllAsRead, onDeepLink, darkMode, setDarkMode }: { 
   user: User | null, 
   onLogout: () => void, 
   activeTab: string, 
@@ -160,28 +228,32 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
   notifications: Notification[],
   onMarkAsRead: (id: number) => void,
   onMarkAllAsRead: () => void,
-  onDeepLink: (link: string) => void
+  onDeepLink: (link: string) => void,
+  darkMode: boolean,
+  setDarkMode: (dark: boolean) => void
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const navItems = [
-    { id: 'home', label: 'Home', icon: HomeIcon },
+  const communityItems = [
     { id: 'blog', label: 'School Blog', icon: BookOpen },
+    { id: 'forum', label: 'Forum', icon: MessageCircle },
     { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'profile', label: 'Profile', icon: UserIcon },
+  ];
+
+  const profileItems = [
+    { id: 'profile', label: 'My Profile', icon: UserIcon },
   ];
 
   if (user) {
-    navItems.push({ id: 'settings', label: 'Settings', icon: SettingsIcon });
+    profileItems.push({ id: 'settings', label: 'Settings', icon: SettingsIcon });
   }
 
   if (user?.role === 'admin') {
-    navItems.push({ id: 'admin', label: 'Admin', icon: Shield });
+    profileItems.push({ id: 'admin', label: 'Admin Panel', icon: Shield });
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -194,36 +266,75 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <span className="text-xl font-bold font-display text-school-primary">
+              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary hidden sm:inline">
                 THEE NDEJJEAN CONNECT
+              </span>
+              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary sm:hidden">
+                TNC
               </span>
             </div>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-2">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === item.id 
-                    ? 'text-school-primary bg-school-primary/10' 
-                    : 'text-slate-500 hover:text-school-primary hover:bg-slate-50'
-                }`}
-              >
-                {item.id === 'profile' && user?.avatar ? (
-                  <img src={user.avatar} className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <item.icon className="w-4 h-4" />
-                )}
-                {item.label}
-              </button>
-            ))}
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'home' 
+                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+              }`}
+            >
+              <HomeIcon className="w-4 h-4" />
+              Home
+            </button>
+
+            <NavDropdown 
+              label="Community" 
+              icon={Users} 
+              items={communityItems} 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab}
+              darkMode={darkMode}
+            />
+
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'messages' 
+                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Messages
+            </button>
+
+            <NavDropdown 
+              label="Account" 
+              icon={UserIcon} 
+              items={profileItems} 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab}
+              darkMode={darkMode}
+            />
             
-            {user && (
-              <div className="h-6 w-px bg-slate-200 mx-2"></div>
-            )}
+            <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2"></div>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              <motion.div
+                animate={{ x: darkMode ? 24 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
+              >
+                {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
+              </motion.div>
+            </button>
 
             {user && (
               <NotificationDropdown 
@@ -238,7 +349,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
             {user ? (
               <button 
                 onClick={onLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -289,43 +400,84 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-slate-200 overflow-hidden"
+            className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-white/10 overflow-hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              {navItems.map((item) => (
+            <div className="px-4 py-6 space-y-2">
+              <button
+                onClick={() => { setActiveTab('home'); setIsOpen(false); }}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold ${
+                  activeTab === 'home' ? 'bg-school-primary/10 text-school-primary dark:bg-school-secondary/10 dark:text-school-secondary' : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <HomeIcon className="w-5 h-5" />
+                Home
+              </button>
+
+              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Community</div>
+              {communityItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setIsOpen(false);
-                  }}
-                  className={`flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-medium ${
-                    activeTab === item.id 
-                      ? 'text-school-primary bg-school-primary/10' 
-                      : 'text-slate-600 hover:bg-slate-50'
+                  onClick={() => { setActiveTab(item.id); setIsOpen(false); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold ${
+                    activeTab === item.id ? 'bg-school-primary/10 text-school-primary dark:bg-school-secondary/10 dark:text-school-secondary' : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
                   {item.label}
                 </button>
               ))}
+
+              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account</div>
+              <button
+                onClick={() => { setActiveTab('messages'); setIsOpen(false); }}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold ${
+                  activeTab === 'messages' ? 'bg-school-primary/10 text-school-primary dark:bg-school-secondary/10 dark:text-school-secondary' : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <MessageSquare className="w-5 h-5" />
+                Messages
+              </button>
+
+              {profileItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setIsOpen(false); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold ${
+                    activeTab === item.id ? 'bg-school-primary/10 text-school-primary dark:bg-school-secondary/10 dark:text-school-secondary' : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              ))}
+
+              <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between px-3">
+                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Dark Mode</span>
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
+                >
+                  <motion.div
+                    animate={{ x: darkMode ? 24 : 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
+                  >
+                    {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
+                  </motion.div>
+                </button>
+              </div>
+
               {user ? (
                 <button 
-                  onClick={() => {
-                    onLogout();
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
+                  onClick={() => { onLogout(); setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-red-600 mt-4"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout
                 </button>
               ) : (
                 <button 
-                  onClick={() => {
-                    setActiveTab('auth');
-                    setIsOpen(false);
-                  }}
+                  onClick={() => { setActiveTab('auth'); setIsOpen(false); }}
                   className="w-full mt-2 btn-primary"
                 >
                   Sign In
@@ -340,6 +492,20 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
 };
 
 const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/announcements')
+      .then(res => res.json())
+      .then(data => {
+        setAnnouncements(data);
+        setLoading(false);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
   return (
     <div className="space-y-16 pb-12">
       {/* Hero Section with Video Background */}
@@ -452,38 +618,45 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
           </div>
           
           <div className="grid gap-4">
-            {[
-              { title: 'New Science Lab Opening Ceremony', date: 'Feb 28, 2026', tag: 'Facility', icon: '🔬' },
-              { title: 'Term 1 Parent-Teacher Conference', date: 'Mar 05, 2026', tag: 'Meeting', icon: '🤝' },
-              { title: 'Easter Break Schedule Released', date: 'Mar 10, 2026', tag: 'Holiday', icon: '📅' },
-            ].map((item, i) => (
-              <motion.div 
-                key={i} 
-                whileHover={{ x: 10 }}
-                className="flex items-center justify-between p-5 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group"
-              >
-                <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl group-hover:bg-white transition-colors">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg group-hover:text-school-primary transition-colors">{item.title}</h4>
-                    <div className="flex items-center gap-2 text-slate-400 text-sm mt-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{item.date}</span>
+            {loading ? (
+              <div className="py-10 text-center text-slate-400">Loading announcements...</div>
+            ) : announcements.length === 0 ? (
+              <div className="py-10 text-center text-slate-400">No announcements at the moment.</div>
+            ) : (
+              (showAll ? announcements : announcements.slice(0, 3)).map((item, i) => (
+                <motion.div 
+                  key={item.id} 
+                  whileHover={{ x: 10 }}
+                  className="flex items-center justify-between p-5 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl group-hover:bg-white transition-colors">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg group-hover:text-school-primary transition-colors">{item.title}</h4>
+                      <div className="flex items-center gap-2 text-slate-400 text-sm mt-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span className="px-4 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-widest group-hover:bg-school-primary group-hover:text-white transition-colors">
-                  {item.tag}
-                </span>
-              </motion.div>
-            ))}
+                  <span className="px-4 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-widest group-hover:bg-school-primary group-hover:text-white transition-colors">
+                    {item.tag}
+                  </span>
+                </motion.div>
+              ))
+            )}
           </div>
           
-          <button className="w-full mt-8 py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-school-primary hover:text-school-primary transition-all">
-            View All Announcements
-          </button>
+          {announcements.length > 3 && (
+            <button 
+              onClick={() => setShowAll(!showAll)}
+              className="w-full mt-8 py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold hover:border-school-primary hover:text-school-primary transition-all"
+            >
+              {showAll ? 'Show Less' : 'View All Announcements'}
+            </button>
+          )}
         </div>
       </section>
     </div>
@@ -1341,11 +1514,15 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
 };
 
 const AdminDashboard = ({ user }: { user: User }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'posts' | 'events'>('users');
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'posts' | 'events' | 'announcements'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [events, setEvents] = useState<SchoolEvent[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', tag: 'General', icon: '📢' });
 
   useEffect(() => {
     fetchData();
@@ -1366,6 +1543,10 @@ const AdminDashboard = ({ user }: { user: User }) => {
         const res = await fetch('/api/events');
         const data = await res.json();
         setEvents(data);
+      } else if (activeSubTab === 'announcements') {
+        const res = await fetch('/api/announcements');
+        const data = await res.json();
+        setAnnouncements(data);
       }
     } catch (e) {
       console.error(e);
@@ -1398,6 +1579,31 @@ const AdminDashboard = ({ user }: { user: User }) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
     const res = await fetch(`/api/events/${id}?user_id=${user.id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
+  };
+
+  const handleDeleteAnnouncement = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    const res = await fetch(`/api/announcements/${id}?admin_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
+  };
+
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const method = editingAnnouncement ? 'PUT' : 'POST';
+    const url = editingAnnouncement ? `/api/announcements/${editingAnnouncement.id}` : '/api/announcements';
+    
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...announcementForm, user_id: user.id })
+    });
+
+    if (res.ok) {
+      setShowCreateAnnouncement(false);
+      setEditingAnnouncement(null);
+      setAnnouncementForm({ title: '', content: '', tag: 'General', icon: '📢' });
+      fetchData();
+    }
   };
 
   return (
@@ -1435,8 +1641,33 @@ const AdminDashboard = ({ user }: { user: User }) => {
             <Calendar className="w-4 h-4" />
             Events
           </button>
+          <button 
+            onClick={() => setActiveSubTab('announcements')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              activeSubTab === 'announcements' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            Announcements
+          </button>
         </div>
       </div>
+
+      {activeSubTab === 'announcements' && (
+        <div className="flex justify-end mb-4">
+          <button 
+            onClick={() => {
+              setEditingAnnouncement(null);
+              setAnnouncementForm({ title: '', content: '', tag: 'General', icon: '📢' });
+              setShowCreateAnnouncement(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusCircle className="w-4 h-4" />
+            New Announcement
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center p-12">
@@ -1546,8 +1777,134 @@ const AdminDashboard = ({ user }: { user: User }) => {
               </tbody>
             </table>
           )}
+
+          {activeSubTab === 'announcements' && (
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Icon</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Tag</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {announcements.map(a => (
+                  <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 text-xl">{a.icon}</td>
+                    <td className="px-6 py-4 font-bold text-slate-700">{a.title}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        {a.tag}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <button 
+                        onClick={() => {
+                          setEditingAnnouncement(a);
+                          setAnnouncementForm({ title: a.title, content: a.content, tag: a.tag, icon: a.icon });
+                          setShowCreateAnnouncement(true);
+                        }}
+                        className="p-2 text-slate-400 hover:text-school-primary transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteAnnouncement(a.id)}
+                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
+
+      {/* Announcement Modal */}
+      <AnimatePresence>
+        {showCreateAnnouncement && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreateAnnouncement(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            ></motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 className="text-2xl font-bold">{editingAnnouncement ? 'Edit' : 'New'} Announcement</h2>
+                <button onClick={() => setShowCreateAnnouncement(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <form onSubmit={handleSaveAnnouncement} className="p-8 space-y-6">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-1 space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Icon</label>
+                    <input 
+                      type="text" 
+                      value={announcementForm.icon}
+                      onChange={e => setAnnouncementForm({...announcementForm, icon: e.target.value})}
+                      className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-school-primary text-center text-2xl"
+                      placeholder="📢"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-3 space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Title</label>
+                    <input 
+                      type="text" 
+                      value={announcementForm.title}
+                      onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                      className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-school-primary font-bold"
+                      placeholder="Announcement Title"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Tag</label>
+                  <select 
+                    value={announcementForm.tag}
+                    onChange={e => setAnnouncementForm({...announcementForm, tag: e.target.value})}
+                    className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-school-primary font-bold appearance-none"
+                  >
+                    <option value="General">General</option>
+                    <option value="Facility">Facility</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Holiday">Holiday</option>
+                    <option value="Academic">Academic</option>
+                    <option value="Sports">Sports</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Content</label>
+                  <textarea 
+                    value={announcementForm.content}
+                    onChange={e => setAnnouncementForm({...announcementForm, content: e.target.value})}
+                    className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-school-primary min-h-[150px] resize-none"
+                    placeholder="Describe the announcement..."
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" className="w-full btn-primary py-4 text-lg">
+                  {editingAnnouncement ? 'Update' : 'Publish'} Announcement
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -2153,7 +2510,7 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
   );
 };
 
-const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
+const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () => void }) => {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'student', token: '' });
   const [error, setError] = useState('');
@@ -2193,7 +2550,6 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
         onLogin(data);
       } else if (mode === 'forgot') {
         setMessage(data.message);
-        // For demo purposes, if token is returned, we can transition to reset
         if (data.token) {
           setFormData(prev => ({ ...prev, token: data.token }));
           setMode('reset');
@@ -2208,78 +2564,88 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto py-12">
-      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl">
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src="https://images.seeklogo.com/logo-png/55/2/ndejje-senior-secondary-school-bombo-logo-png_seeklogo-556141.png?v=1958513566915908752" 
-              alt="Ndejje SSS Logo" 
-              className="w-full h-full object-contain"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <h2 className="text-3xl font-bold">
-            {mode === 'login' ? 'Welcome Back' : 
-             mode === 'signup' ? 'Create Account' : 
-             mode === 'forgot' ? 'Forgot Password' : 'Reset Password'}
-          </h2>
-          <p className="text-slate-500 mt-2">
-            {mode === 'login' ? 'Sign in to access your school portal' : 
-             mode === 'signup' ? 'Join our school community today' :
-             mode === 'forgot' ? 'Enter your email to receive a reset link' : 'Enter your new password below'}
-          </p>
+    <div className="fixed inset-0 flex items-center justify-center bg-white overflow-hidden z-[9999]">
+      {/* Corner Waves - Top Left */}
+      <div className="absolute top-0 left-0 w-64 h-64 pointer-events-none">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M0,0 L250,0 Q180,150 0,200 Z" fill="#0a1f44" />
+          <path d="M0,0 L180,0 Q120,100 0,140 Z" fill="#ffd700" />
+        </svg>
+      </div>
+
+      {/* Corner Waves - Bottom Right */}
+      <div className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none rotate-180">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M0,0 L250,0 Q180,150 0,200 Z" fill="#0a1f44" />
+          <path d="M0,0 L180,0 Q120,100 0,140 Z" fill="#ffd700" />
+        </svg>
+      </div>
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative w-[380px] p-10 bg-[#0a1f44] rounded-[20px] border-2 border-[#ffd700] shadow-[0_20px_60px_rgba(10,31,68,0.3)] text-center animate-float-card z-10"
+      >
+        {/* Back Button */}
+        <button 
+          onClick={onBack}
+          className="absolute top-4 left-4 z-20 p-2 text-white/40 hover:text-[#ffd700] transition-colors"
+          title="Back to Home"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        {/* White Scrolls in Corners */}
+        <ScrollText className="absolute top-4 left-4 text-white/40 w-6 h-6 rotate-[-15deg]" />
+        <ScrollText className="absolute bottom-4 right-4 text-white/40 w-6 h-6 rotate-[165deg]" />
+
+        {/* Logo */}
+        <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+          <img 
+            src="https://images.seeklogo.com/logo-png/55/2/ndejje-senior-secondary-school-bombo-logo-png_seeklogo-556141.png?v=1958513566915908752" 
+            alt="Ndejje SSS Logo" 
+            className="w-full h-full object-contain"
+            referrerPolicy="no-referrer"
+          />
         </div>
 
+        <h2 className="text-[#ffd700] text-2xl font-bold mb-1 uppercase tracking-tight">Ndejje Senior Secondary School</h2>
+        <h4 className="text-white font-light mb-6 tracking-[2px] text-sm uppercase">Connect Portal</h4>
+
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium">
+          <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-4 text-xs font-medium border border-red-500/30">
             {error}
           </div>
         )}
 
         {message && (
-          <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl mb-6 text-sm font-medium">
+          <div className="bg-emerald-500/20 text-emerald-200 p-3 rounded-lg mb-4 text-xs font-medium border border-emerald-500/30">
             {message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
           {mode === 'signup' && (
-            <>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">I am a...</label>
-                <select 
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none bg-white"
-                  value={formData.role}
-                  onChange={e => setFormData({...formData, role: e.target.value})}
-                  required
-                >
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="parent">Parent</option>
-                </select>
-              </div>
-            </>
+            <div className="space-y-1">
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Full Name</label>
+              <input 
+                type="text" 
+                placeholder="Enter your full name"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                required
+              />
+            </div>
           )}
 
           {(mode === 'login' || mode === 'signup' || mode === 'forgot') && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+            <div className="space-y-1">
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Email</label>
               <input 
                 type="email" 
-                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none"
-                placeholder="you@school.edu"
+                placeholder="Enter your email"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
                 required
@@ -2288,12 +2654,12 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
           )}
 
           {mode === 'reset' && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Reset Token</label>
+            <div className="space-y-1">
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Reset Token</label>
               <input 
                 type="text" 
-                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none"
                 placeholder="Enter token from email"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
                 value={formData.token}
                 onChange={e => setFormData({...formData, token: e.target.value})}
                 required
@@ -2302,25 +2668,25 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
           )}
 
           {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-semibold text-slate-700">
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-[#ffd700] text-xs font-semibold ml-1">
                   {mode === 'reset' ? 'New Password' : 'Password'}
                 </label>
                 {mode === 'login' && (
                   <button 
                     type="button"
                     onClick={() => setMode('forgot')}
-                    className="text-xs font-bold text-school-primary hover:underline"
+                    className="text-[10px] font-bold text-white/60 hover:text-[#ffd700] transition-colors"
                   >
-                    Forgot Password?
+                    Forgot?
                   </button>
                 )}
               </div>
               <input 
                 type="password" 
-                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none"
-                placeholder="••••••••"
+                placeholder="Enter password"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-yellow-100"
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
                 required
@@ -2328,29 +2694,47 @@ const Auth = ({ onLogin }: { onLogin: (user: User) => void }) => {
             </div>
           )}
 
-          <button type="submit" className="w-full btn-primary py-4 mt-4">
-            {mode === 'login' ? 'Sign In' : 
-             mode === 'signup' ? 'Create Account' : 
+          {mode === 'signup' && (
+            <div className="space-y-1">
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Role</label>
+              <select 
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white appearance-none"
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+                required
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="parent">Parent</option>
+              </select>
+            </div>
+          )}
+
+          <button type="submit" className="w-full p-3 bg-[#ffd700] text-[#0a1f44] font-bold rounded-lg text-base hover:bg-white hover:scale-[1.05] transition-all mt-2">
+            {mode === 'login' ? 'Login' : 
+             mode === 'signup' ? 'Register' : 
              mode === 'forgot' ? 'Send Reset Link' : 'Reset Password'}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-sm text-slate-500">
-            {mode === 'login' ? (
-              <>
-                Don't have an account?{' '}
-                <button onClick={() => setMode('signup')} className="font-bold text-school-primary hover:underline">Sign Up</button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <button onClick={() => setMode('login')} className="font-bold text-school-primary hover:underline">Sign In</button>
-              </>
-            )}
-          </p>
+        <div className="mt-6 text-white text-[13px] font-medium">
+          {mode === 'login' ? (
+            <p>
+              Don't have an account?{' '}
+              <button onClick={() => setMode('signup')} className="text-[#ffd700] font-bold hover:underline">Register</button>
+            </p>
+          ) : (
+            <p>
+              Already have an account?{' '}
+              <button onClick={() => setMode('login')} className="text-[#ffd700] font-bold hover:underline">Login</button>
+            </p>
+          )}
         </div>
-      </div>
+
+        <div className="mt-4 text-white/60 text-[11px] uppercase tracking-widest">
+          Uniting Parents, Students & Administration
+        </div>
+      </motion.div>
     </div>
   );
 };
@@ -2439,7 +2823,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<any[]>([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [deepLink, setDeepLink] = useState<{ tab: string, params: Record<string, string> } | null>(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('school_dark_mode');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('school_dark_mode', String(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('school_user');
@@ -2504,9 +2902,14 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     setUser(null);
     localStorage.removeItem('school_user');
     setActiveTab('home');
+    setShowLogoutConfirm(false);
   };
 
   const handleDeepLink = (link: string) => {
@@ -2526,27 +2929,30 @@ export default function App() {
     switch (activeTab) {
       case 'home': return <Home setActiveTab={setActiveTab} />;
       case 'blog': return <Blog user={user} deepLink={deepLink?.tab === 'blog' ? deepLink.params : null} />;
+      case 'forum': return <Forum user={user} deepLink={deepLink?.tab === 'forum' ? deepLink.params : null} />;
       case 'events': return <Events user={user} deepLink={deepLink?.tab === 'events' ? deepLink.params : null} />;
       case 'messages': return <Messages user={user} deepLink={deepLink?.tab === 'messages' ? deepLink.params : null} />;
       case 'settings': return <Settings user={user} />;
       case 'profile': return <Profile user={user} onLogout={handleLogout} onUpdateUser={setUser} />;
       case 'admin': return user?.role === 'admin' ? <AdminDashboard user={user} /> : <Home setActiveTab={setActiveTab} />;
-      case 'auth': return <Auth onLogin={handleLogin} />;
+      case 'auth': return <Auth onLogin={handleLogin} onBack={() => setActiveTab('home')} />;
       default: return <Home setActiveTab={setActiveTab} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#050505] transition-colors duration-300">
       <Navbar 
         user={user} 
         onLogout={handleLogout} 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={setActiveTab}
         notifications={notifications}
         onMarkAsRead={handleMarkAsRead}
         onMarkAllAsRead={handleMarkAllAsRead}
         onDeepLink={handleDeepLink}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
       />
       
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -2584,7 +2990,16 @@ export default function App() {
               <p className="text-white/70 max-w-xs mb-4">
                 A Christ-centered school nurturing holistically competent citizens for development and prosperity.
               </p>
-              <p className="text-school-secondary font-bold italic">"No Pain No Gains"</p>
+              <p className="text-school-secondary font-bold italic mb-6">"No Pain No Gains"</p>
+              <a 
+                href="https://ndejjesss.ac.ug/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-school-secondary text-school-primary rounded-xl font-bold text-sm hover:scale-105 transition-all shadow-lg shadow-black/20"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Visit Official Website
+              </a>
             </div>
             <div>
               <h4 className="font-bold mb-4 text-school-secondary">Quick Links</h4>
@@ -2593,6 +3008,7 @@ export default function App() {
                 <li><button onClick={() => setActiveTab('blog')} className="hover:text-school-secondary transition-colors">School Blog</button></li>
                 <li><button onClick={() => setActiveTab('events')} className="hover:text-school-secondary transition-colors">Events</button></li>
                 <li><button onClick={() => setActiveTab('messages')} className="hover:text-school-secondary transition-colors">Messages</button></li>
+                <li><a href="https://ndejjesss.ac.ug/" target="_blank" rel="noopener noreferrer" className="hover:text-school-secondary transition-colors flex items-center gap-1">Official Website <ExternalLink className="w-3 h-3" /></a></li>
               </ul>
             </div>
             <div>
@@ -2630,6 +3046,49 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            ></motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 text-center"
+            >
+              <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <LogOut className="w-10 h-10 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Confirm Logout</h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-8">
+                Are you sure you want to log out of your account? You'll need to sign in again to access your messages and profile.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={confirmLogout}
+                  className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95"
+                >
+                  Yes, Log Me Out
+                </button>
+                <button 
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="w-full py-4 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,153 +1,40 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
+import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("school.db");
-
-// Initialize Database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT DEFAULT 'user',
-    avatar TEXT,
-    bio TEXT,
-    phone TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    image TEXT,
-    author_id INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (author_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS comments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    post_id INTEGER,
-    user_id INTEGER,
-    content TEXT NOT NULL,
-    image TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS likes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    post_id INTEGER,
-    user_id INTEGER,
-    UNIQUE(post_id, user_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    date TEXT NOT NULL,
-    time TEXT,
-    location TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_id INTEGER,
-    receiver_id INTEGER,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES users(id),
-    FOREIGN KEY (receiver_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS notifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    type TEXT NOT NULL,
-    content TEXT NOT NULL,
-    link TEXT,
-    is_read INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS password_resets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    token TEXT NOT NULL,
-    expires_at DATETIME NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS user_settings (
-    user_id INTEGER PRIMARY KEY,
-    notify_messages INTEGER DEFAULT 1,
-    notify_events INTEGER DEFAULT 1,
-    notify_blog INTEGER DEFAULT 1,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-`);
-
-// Migration: Add image columns if they don't exist
-try { db.exec("ALTER TABLE posts ADD COLUMN image TEXT"); } catch (e) {}
-try { db.exec("ALTER TABLE comments ADD COLUMN image TEXT"); } catch (e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN bio TEXT"); } catch (e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN phone TEXT"); } catch (e) {}
-
-// Seed Admin if not exists
-const adminExists = db.prepare("SELECT * FROM users WHERE role = 'admin'").get();
-if (!adminExists) {
-  db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(
-    "School Admin",
-    "admin@school.edu",
-    "admin123",
-    "admin"
-  );
-  
-  // Seed some initial data
-  db.prepare("INSERT INTO posts (title, content, author_id) VALUES (?, ?, ?)").run(
-    "Welcome to EduConnect",
-    "We are excited to launch our new school portal! Stay tuned for updates.",
-    1
-  );
-
-  db.prepare("INSERT INTO events (title, description, date, location) VALUES (?, ?, ?, ?)").run(
-    "Annual Sports Day",
-    "Join us for a day of athletic excellence and fun!",
-    "2026-03-15",
-    "School Main Field"
-  );
-
-  // Initialize settings for admin
-  db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(1);
-}
+// Supabase Configuration
+const supabaseUrl = process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.com";
+const supabaseKey = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhic2F0ZGZjaGdqdmdla2tjZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzU1NzcsImV4cCI6MjA4ODMxMTU3N30.7lTVZG4N4KUozXF5oNgvRG6yj7DnU0lFaTnP_euKQYI";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const clients = new Map<number, WebSocket>();
 
-function createNotification(db: any, userId: number, type: string, content: string, link: string) {
-  const settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(userId);
+async function createNotification(userId: number, type: string, content: string, link: string) {
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
   if (!settings) return;
 
   let shouldNotify = false;
   if (type === 'message' && settings.notify_messages) shouldNotify = true;
   if (type === 'event' && settings.notify_events) shouldNotify = true;
   if (type === 'comment' && settings.notify_blog) shouldNotify = true;
+  if (type === 'announcement') shouldNotify = true;
 
   if (shouldNotify) {
-    db.prepare("INSERT INTO notifications (user_id, type, content, link) VALUES (?, ?, ?, ?)").run(userId, type, content, link);
+    await supabase
+      .from("notifications")
+      .insert([{ user_id: userId, type, content, link }]);
     
     // Real-time WebSocket notification
     const client = clients.get(userId);
@@ -188,23 +75,35 @@ async function startServer() {
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Auth Routes
-  app.post("/api/auth/signup", (req, res) => {
+  app.post("/api/auth/signup", async (req, res) => {
     const { name, email, password, role } = req.body;
     try {
-      const result = db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(name, email, password, role || 'student');
-      const userId = result.lastInsertRowid;
+      const { data: newUser, error } = await supabase
+        .from("users")
+        .insert([{ name, email, password, role: role || 'student' }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       // Initialize settings
-      db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(userId);
-      const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE id = ?").get(userId);
-      res.json(user);
-    } catch (e) {
-      res.status(400).json({ error: "Email already exists" });
+      await supabase.from("user_settings").insert([{ user_id: newUser.id }]);
+      
+      res.json(newUser);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message || "Email already exists" });
     }
   });
 
-  app.post("/api/auth/login", (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
-    const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE email = ? AND password = ?").get(email, password);
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("id, name, email, role, avatar, bio, phone")
+      .eq("email", email)
+      .eq("password", password)
+      .single();
+
     if (user) {
       res.json(user);
     } else {
@@ -212,255 +111,447 @@ async function startServer() {
     }
   });
 
-  app.post("/api/auth/forgot-password", (req, res) => {
+  app.post("/api/auth/forgot-password", async (req, res) => {
     const { email } = req.body;
-    const user = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+    const { data: user } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
 
-    db.prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)").run(email, token, expiresAt);
+    await supabase
+      .from("password_resets")
+      .insert([{ email, token, expires_at: expiresAt }]);
 
-    // In a real app, send email. Here we just return the token for the demo.
     console.log(`Password reset token for ${email}: ${token}`);
-    res.json({ message: "Reset link sent to your email", token }); // Token returned for demo purposes
+    res.json({ message: "Reset link sent to your email", token });
   });
 
-  app.post("/api/auth/reset-password", (req, res) => {
+  app.post("/api/auth/reset-password", async (req, res) => {
     const { token, password } = req.body;
-    const reset = db.prepare("SELECT email FROM password_resets WHERE token = ? AND expires_at > ?").get(token, new Date().toISOString());
+    const { data: reset } = await supabase
+      .from("password_resets")
+      .select("email")
+      .eq("token", token)
+      .gt("expires_at", new Date().toISOString())
+      .single();
     
     if (!reset) return res.status(400).json({ error: "Invalid or expired token" });
 
-    db.prepare("UPDATE users SET password = ? WHERE email = ?").run(password, reset.email);
-    db.prepare("DELETE FROM password_resets WHERE email = ?").run(reset.email);
+    await supabase.from("users").update({ password }).eq("email", reset.email);
+    await supabase.from("password_resets").delete().eq("email", reset.email);
 
     res.json({ success: true, message: "Password updated successfully" });
   });
 
   // Blog Routes
-  app.get("/api/posts", (req, res) => {
-    const posts = db.prepare(`
-      SELECT p.*, u.name as author_name, 
-      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
-      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count
-      FROM posts p 
-      JOIN users u ON p.author_id = u.id 
-      ORDER BY created_at DESC
-    `).all();
-    res.json(posts);
+  app.get("/api/posts", async (req, res) => {
+    const { data: posts, error } = await supabase
+      .from("posts")
+      .select(`
+        *,
+        author:users!author_id(name),
+        likes_count:likes(count),
+        comments_count:comments(count)
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    // Format for frontend
+    const formattedPosts = posts.map(p => ({
+      ...p,
+      author_name: p.author?.name,
+      likes_count: p.likes_count?.[0]?.count || 0,
+      comments_count: p.comments_count?.[0]?.count || 0
+    }));
+
+    res.json(formattedPosts);
   });
 
-  app.post("/api/posts", (req, res) => {
+  app.post("/api/posts", async (req, res) => {
     const { title, content, image, author_id } = req.body;
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(author_id);
+    const { data: user } = await supabase.from("users").select("role").eq("id", author_id).single();
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can post" });
     
-    const result = db.prepare("INSERT INTO posts (title, content, image, author_id) VALUES (?, ?, ?, ?)").run(title, content, image, author_id);
-    res.json({ id: result.lastInsertRowid });
+    const { data: post, error } = await supabase
+      .from("posts")
+      .insert([{ title, content, image, author_id }])
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ id: post.id });
   });
 
-  app.put("/api/posts/:id", (req, res) => {
+  app.put("/api/posts/:id", async (req, res) => {
     const { title, content, image, author_id } = req.body;
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(author_id);
+    const { data: user } = await supabase.from("users").select("role").eq("id", author_id).single();
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can edit posts" });
     
-    db.prepare("UPDATE posts SET title = ?, content = ?, image = ? WHERE id = ?").run(title, content, image, req.params.id);
+    await supabase.from("posts").update({ title, content, image }).eq("id", req.params.id);
     res.json({ success: true });
   });
 
-  app.get("/api/posts/:id/comments", (req, res) => {
-    const comments = db.prepare(`
-      SELECT c.*, u.name as user_name 
-      FROM comments c 
-      JOIN users u ON c.user_id = u.id 
-      WHERE c.post_id = ? 
-      ORDER BY created_at ASC
-    `).all(req.params.id);
-    res.json(comments);
+  app.get("/api/posts/:id/comments", async (req, res) => {
+    const { data: comments } = await supabase
+      .from("comments")
+      .select("*, user:users!user_id(name)")
+      .eq("post_id", req.params.id)
+      .order("created_at", { ascending: true });
+
+    const formattedComments = comments?.map(c => ({
+      ...c,
+      user_name: c.user?.name
+    }));
+
+    res.json(formattedComments || []);
   });
 
-  app.post("/api/posts/:id/comments", (req, res) => {
+  app.post("/api/posts/:id/comments", async (req, res) => {
     const { user_id, content, image } = req.body;
-    db.prepare("INSERT INTO comments (post_id, user_id, content, image) VALUES (?, ?, ?, ?)").run(req.params.id, user_id, content, image);
+    await supabase.from("comments").insert([{ post_id: req.params.id, user_id, content, image }]);
     
     // Notify post author
-    const post = db.prepare("SELECT author_id, title FROM posts WHERE id = ?").get(req.params.id);
-    const user = db.prepare("SELECT name FROM users WHERE id = ?").get(user_id);
+    const { data: post } = await supabase.from("posts").select("author_id, title").eq("id", req.params.id).single();
+    const { data: user } = await supabase.from("users").select("name").eq("id", user_id).single();
     if (post && post.author_id !== user_id) {
-      createNotification(db, post.author_id, 'comment', `${user.name} commented on your post: ${post.title}`, `blog?post_id=${req.params.id}`);
+      await createNotification(post.author_id, 'comment', `${user.name} commented on your post: ${post.title}`, `blog?post_id=${req.params.id}`);
     }
     
     res.json({ success: true });
   });
 
-  app.post("/api/posts/:id/like", (req, res) => {
+  app.post("/api/posts/:id/like", async (req, res) => {
     const { user_id } = req.body;
-    try {
-      db.prepare("INSERT INTO likes (post_id, user_id) VALUES (?, ?)").run(req.params.id, user_id);
-      res.json({ liked: true });
-    } catch (e) {
-      db.prepare("DELETE FROM likes WHERE post_id = ? AND user_id = ?").run(req.params.id, user_id);
+    const { data: existingLike } = await supabase
+      .from("likes")
+      .select("*")
+      .eq("post_id", req.params.id)
+      .eq("user_id", user_id)
+      .single();
+
+    if (existingLike) {
+      await supabase.from("likes").delete().eq("post_id", req.params.id).eq("user_id", user_id);
       res.json({ liked: false });
+    } else {
+      await supabase.from("likes").insert([{ post_id: req.params.id, user_id }]);
+      res.json({ liked: true });
     }
   });
 
   // Users Routes
-  app.get("/api/users", (req, res) => {
-    const users = db.prepare("SELECT id, name, email, role FROM users").all();
-    res.json(users);
+  app.get("/api/users", async (req, res) => {
+    const { data: users } = await supabase.from("users").select("id, name, email, role");
+    res.json(users || []);
   });
 
-  app.delete("/api/users/:id", (req, res) => {
+  app.delete("/api/users/:id", async (req, res) => {
     const { admin_id } = req.query;
-    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    const { data: admin } = await supabase.from("users").select("role").eq("id", admin_id).single();
     if (admin?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
 
-    db.prepare("DELETE FROM users WHERE id = ?").run(req.params.id);
+    await supabase.from("users").delete().eq("id", req.params.id);
     res.json({ success: true });
   });
 
-  app.patch("/api/users/:id/role", (req, res) => {
+  app.patch("/api/users/:id/role", async (req, res) => {
     const { admin_id, role } = req.body;
-    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    const { data: admin } = await supabase.from("users").select("role").eq("id", admin_id).single();
     if (admin?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
 
-    db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
+    await supabase.from("users").update({ role }).eq("id", req.params.id);
     res.json({ success: true });
   });
 
-  app.put("/api/users/:id/profile", (req, res) => {
+  app.put("/api/users/:id/profile", async (req, res) => {
     const { name, avatar, bio, phone } = req.body;
-    db.prepare("UPDATE users SET name = ?, avatar = ?, bio = ?, phone = ? WHERE id = ?").run(name, avatar, bio, phone, req.params.id);
-    const user = db.prepare("SELECT id, name, email, role, avatar, bio, phone FROM users WHERE id = ?").get(req.params.id);
+    await supabase.from("users").update({ name, avatar, bio, phone }).eq("id", req.params.id);
+    const { data: user } = await supabase.from("users").select("id, name, email, role, avatar, bio, phone").eq("id", req.params.id).single();
     res.json(user);
   });
 
-  app.delete("/api/posts/:id", (req, res) => {
+  app.delete("/api/posts/:id", async (req, res) => {
     const { admin_id } = req.query;
-    const admin = db.prepare("SELECT role FROM users WHERE id = ?").get(admin_id);
+    const { data: admin } = await supabase.from("users").select("role").eq("id", admin_id).single();
     if (admin?.role !== 'admin' && admin?.role !== 'teacher') return res.status(403).json({ error: "Unauthorized" });
 
-    db.prepare("DELETE FROM posts WHERE id = ?").run(req.params.id);
-    db.prepare("DELETE FROM comments WHERE post_id = ?").run(req.params.id);
-    db.prepare("DELETE FROM likes WHERE post_id = ?").run(req.params.id);
+    await supabase.from("posts").delete().eq("id", req.params.id);
     res.json({ success: true });
   });
 
   // Messaging Routes
-  app.get("/api/messages/conversations/:userId", (req, res) => {
+  app.get("/api/messages/conversations/:userId", async (req, res) => {
     const userId = req.params.userId;
-    const conversations = db.prepare(`
-      SELECT 
-        u.id as other_user_id,
-        u.name as other_user_name,
-        u.role as other_user_role,
-        m.content as last_message,
-        m.created_at as last_message_at
-      FROM users u
-      JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = u.id)
-      WHERE u.id != ?
-      GROUP BY u.id
-      ORDER BY m.created_at DESC
-    `).all(userId, userId, userId);
-    res.json(conversations);
+    // This is a bit complex in Supabase without a custom RPC, but we can approximate it
+    const { data: messages } = await supabase
+      .from("messages")
+      .select("*, sender:users!sender_id(id, name, role), receiver:users!receiver_id(id, name, role)")
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order("created_at", { ascending: false });
+
+    const conversationsMap = new Map();
+    messages?.forEach(m => {
+      const otherUser = m.sender_id == userId ? m.receiver : m.sender;
+      if (!conversationsMap.has(otherUser.id)) {
+        conversationsMap.set(otherUser.id, {
+          other_user_id: otherUser.id,
+          other_user_name: otherUser.name,
+          other_user_role: otherUser.role,
+          last_message: m.content,
+          last_message_at: m.created_at
+        });
+      }
+    });
+
+    res.json(Array.from(conversationsMap.values()));
   });
 
-  app.get("/api/messages/:userId/:otherId", (req, res) => {
+  app.get("/api/messages/:userId/:otherId", async (req, res) => {
     const { userId, otherId } = req.params;
-    const messages = db.prepare(`
-      SELECT * FROM messages 
-      WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-      ORDER BY created_at ASC
-    `).all(userId, otherId, otherId, userId);
-    res.json(messages);
+    const { data: messages } = await supabase
+      .from("messages")
+      .select("*")
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${userId})`)
+      .order("created_at", { ascending: true });
+
+    res.json(messages || []);
   });
 
-  app.post("/api/messages", (req, res) => {
+  app.post("/api/messages", async (req, res) => {
     const { sender_id, receiver_id, content } = req.body;
-    const result = db.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)").run(sender_id, receiver_id, content);
+    const { data: message } = await supabase
+      .from("messages")
+      .insert([{ sender_id, receiver_id, content }])
+      .select()
+      .single();
     
     // Notify receiver
-    const sender = db.prepare("SELECT name FROM users WHERE id = ?").get(sender_id);
-    createNotification(db, receiver_id, 'message', `New message from ${sender.name}`, `messages?user_id=${sender_id}`);
+    const { data: sender } = await supabase.from("users").select("name").eq("id", sender_id).single();
+    await createNotification(receiver_id, 'message', `New message from ${sender.name}`, `messages?user_id=${sender_id}`);
     
-    res.json({ id: result.lastInsertRowid });
+    res.json({ id: message.id });
   });
 
   // Events Routes
-  app.get("/api/events", (req, res) => {
-    const events = db.prepare("SELECT * FROM events ORDER BY date ASC, time ASC").all();
-    res.json(events);
+  app.get("/api/events", async (req, res) => {
+    const { data: events } = await supabase.from("events").select("*").order("date", { ascending: true });
+    res.json(events || []);
   });
 
-  app.post("/api/events", (req, res) => {
+  app.post("/api/events", async (req, res) => {
     const { title, description, date, time, location, user_id } = req.body;
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(user_id);
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can create events" });
 
-    const result = db.prepare("INSERT INTO events (title, description, date, time, location) VALUES (?, ?, ?, ?, ?)").run(title, description, date, time, location);
+    const { data: event } = await supabase.from("events").insert([{ title, description, date, time, location }]).select().single();
     
     // Notify all users about new event
-    const users = db.prepare("SELECT id FROM users WHERE id != ?").all(user_id);
-    users.forEach(u => {
-      createNotification(db, u.id, 'event', `New school event: ${title}`, `events?event_id=${result.lastInsertRowid}`);
+    const { data: users } = await supabase.from("users").select("id").neq("id", user_id);
+    users?.forEach(u => {
+      createNotification(u.id, 'event', `New school event: ${title}`, `events?event_id=${event.id}`);
     });
 
-    res.json({ id: result.lastInsertRowid });
+    res.json({ id: event.id });
   });
 
-  app.put("/api/events/:id", (req, res) => {
+  app.put("/api/events/:id", async (req, res) => {
     const { title, description, date, time, location, user_id } = req.body;
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(user_id);
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can edit events" });
 
-    db.prepare("UPDATE events SET title = ?, description = ?, date = ?, time = ?, location = ? WHERE id = ?").run(title, description, date, time, location, req.params.id);
+    await supabase.from("events").update({ title, description, date, time, location }).eq("id", req.params.id);
     res.json({ success: true });
   });
 
-  app.delete("/api/events/:id", (req, res) => {
+  app.delete("/api/events/:id", async (req, res) => {
     const { user_id } = req.query;
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(user_id);
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
     if (user?.role !== 'admin' && user?.role !== 'teacher') return res.status(403).json({ error: "Only admins and teachers can delete events" });
 
-    db.prepare("DELETE FROM events WHERE id = ?").run(req.params.id);
+    await supabase.from("events").delete().eq("id", req.params.id);
+    res.json({ success: true });
+  });
+
+  // Announcements Routes
+  app.get("/api/announcements", async (req, res) => {
+    const { data: announcements } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
+    res.json(announcements || []);
+  });
+
+  app.post("/api/announcements", async (req, res) => {
+    const { title, content, tag, icon, user_id } = req.body;
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Only admins can create announcements" });
+
+    const { data: announcement } = await supabase.from("announcements").insert([{ title, content, tag, icon }]).select().single();
+    
+    // Notify all users
+    const { data: users } = await supabase.from("users").select("id").neq("id", user_id);
+    users?.forEach(u => {
+      createNotification(u.id, 'announcement', `New announcement: ${title}`, 'home');
+    });
+
+    res.json({ id: announcement.id });
+  });
+
+  app.put("/api/announcements/:id", async (req, res) => {
+    const { title, content, tag, icon, user_id } = req.body;
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Only admins can edit announcements" });
+
+    await supabase.from("announcements").update({ title, content, tag, icon }).eq("id", req.params.id);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/announcements/:id", async (req, res) => {
+    const admin_id = req.query.admin_id;
+    const { data: user } = await supabase.from("users").select("role").eq("id", admin_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Only admins can delete announcements" });
+
+    await supabase.from("announcements").delete().eq("id", req.params.id);
     res.json({ success: true });
   });
 
   // Notifications Routes
-  app.get("/api/notifications/:userId", (req, res) => {
-    const notifications = db.prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").all(req.params.userId);
-    res.json(notifications);
+  app.get("/api/notifications/:userId", async (req, res) => {
+    const { data: notifications } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", req.params.userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    res.json(notifications || []);
   });
 
-  app.get("/api/settings/:userId", (req, res) => {
-    let settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(req.params.userId);
+  app.get("/api/settings/:userId", async (req, res) => {
+    let { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", req.params.userId).single();
     if (!settings) {
-      db.prepare("INSERT INTO user_settings (user_id) VALUES (?)").run(req.params.userId);
-      settings = db.prepare("SELECT * FROM user_settings WHERE user_id = ?").get(req.params.userId);
+      const { data: newSettings } = await supabase.from("user_settings").insert([{ user_id: req.params.userId }]).select().single();
+      settings = newSettings;
     }
     res.json(settings);
   });
 
-  app.put("/api/settings/:userId", (req, res) => {
+  app.put("/api/settings/:userId", async (req, res) => {
     const { notify_messages, notify_events, notify_blog } = req.body;
-    db.prepare(`
-      UPDATE user_settings 
-      SET notify_messages = ?, notify_events = ?, notify_blog = ? 
-      WHERE user_id = ?
-    `).run(notify_messages ? 1 : 0, notify_events ? 1 : 0, notify_blog ? 1 : 0, req.params.userId);
+    await supabase.from("user_settings").update({ 
+      notify_messages: notify_messages ? 1 : 0, 
+      notify_events: notify_events ? 1 : 0, 
+      notify_blog: notify_blog ? 1 : 0 
+    }).eq("user_id", req.params.userId);
     res.json({ success: true });
   });
 
-  app.post("/api/notifications/:id/read", (req, res) => {
-    db.prepare("UPDATE notifications SET is_read = 1 WHERE id = ?").run(req.params.id);
+  app.post("/api/notifications/:id/read", async (req, res) => {
+    await supabase.from("notifications").update({ is_read: 1 }).eq("id", req.params.id);
     res.json({ success: true });
   });
 
-  app.post("/api/notifications/read-all/:userId", (req, res) => {
-    db.prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?").run(req.params.userId);
+  app.post("/api/notifications/read-all/:userId", async (req, res) => {
+    await supabase.from("notifications").update({ is_read: 1 }).eq("user_id", req.params.userId);
     res.json({ success: true });
+  });
+
+  // Forum Routes
+  app.get("/api/forum/categories", async (req, res) => {
+    // This requires some aggregation which is better done via RPC or multiple queries in Supabase
+    const { data: categories } = await supabase.from("forum_categories").select("*");
+    
+    const formattedCategories = await Promise.all(categories?.map(async (c) => {
+      const { count: topicsCount } = await supabase.from("forum_topics").select("*", { count: 'exact', head: true }).eq("category_id", c.id);
+      
+      // For posts count, we need to join topics
+      const { data: topics } = await supabase.from("forum_topics").select("id").eq("category_id", c.id);
+      const topicIds = topics?.map(t => t.id) || [];
+      const { count: postsCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).in("topic_id", topicIds);
+
+      return {
+        ...c,
+        topics_count: topicsCount || 0,
+        posts_count: postsCount || 0
+      };
+    }) || []);
+
+    res.json(formattedCategories);
+  });
+
+  app.get("/api/forum/categories/:id/topics", async (req, res) => {
+    const { data: topics } = await supabase
+      .from("forum_topics")
+      .select("*, author:users!user_id(name, role)")
+      .eq("category_id", req.params.id)
+      .order("created_at", { ascending: false });
+
+    const formattedTopics = await Promise.all(topics?.map(async (t) => {
+      const { count: repliesCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).eq("topic_id", t.id);
+      return {
+        ...t,
+        author_name: t.author?.name,
+        author_role: t.author?.role,
+        replies_count: repliesCount || 0
+      };
+    }) || []);
+
+    res.json(formattedTopics);
+  });
+
+  app.post("/api/forum/topics", async (req, res) => {
+    const { category_id, user_id, title, content } = req.body;
+    const { data: topic } = await supabase.from("forum_topics").insert([{ category_id, user_id, title, content }]).select().single();
+    res.json({ id: topic.id });
+  });
+
+  app.get("/api/forum/topics/:id", async (req, res) => {
+    const { data: topic } = await supabase
+      .from("forum_topics")
+      .select("*, author:users!user_id(name, role, avatar)")
+      .eq("id", req.params.id)
+      .single();
+
+    if (topic) {
+      topic.author_name = topic.author?.name;
+      topic.author_role = topic.author?.role;
+      topic.author_avatar = topic.author?.avatar;
+    }
+
+    res.json(topic);
+  });
+
+  app.get("/api/forum/topics/:id/posts", async (req, res) => {
+    const { data: posts } = await supabase
+      .from("forum_posts")
+      .select("*, author:users!user_id(name, role, avatar)")
+      .eq("topic_id", req.params.id)
+      .order("created_at", { ascending: true });
+
+    const formattedPosts = posts?.map(p => ({
+      ...p,
+      author_name: p.author?.name,
+      author_role: p.author?.role,
+      author_avatar: p.author?.avatar
+    }));
+
+    res.json(formattedPosts || []);
+  });
+
+  app.post("/api/forum/posts", async (req, res) => {
+    const { topic_id, user_id, content } = req.body;
+    const { data: post } = await supabase.from("forum_posts").insert([{ topic_id, user_id, content }]).select().single();
+    
+    // Notify topic author if it's not them
+    const { data: topic } = await supabase.from("forum_topics").select("user_id, title").eq("id", topic_id).single();
+    const { data: replier } = await supabase.from("users").select("name").eq("id", user_id).single();
+    if (topic && topic.user_id !== user_id) {
+      await createNotification(topic.user_id, 'comment', `${replier.name} replied to your topic: ${topic.title}`, `forum?topic_id=${topic_id}`);
+    }
+
+    res.json({ id: post.id });
   });
 
   // Vite middleware for development
