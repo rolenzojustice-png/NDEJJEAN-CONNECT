@@ -177,8 +177,8 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMo
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
           isActive 
-            ? 'text-black bg-black/10 dark:text-white dark:bg-white/10' 
-            : 'text-black/60 dark:text-white/60 hover:text-black hover:bg-black/5 dark:hover:text-white dark:hover:bg-white/5'
+            ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+            : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
         }`}
       >
         <Icon className="w-4 h-4" />
@@ -194,7 +194,7 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMo
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
-            className="absolute left-0 mt-2 w-48 bg-white dark:bg-black rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden p-1"
+            className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-white/10 z-50 overflow-hidden p-1"
           >
             {items.map((item) => (
               <button
@@ -205,8 +205,8 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMo
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   activeTab === item.id 
-                    ? 'text-black bg-black/5 dark:text-white dark:bg-white/5' 
-                    : 'text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5'
+                    ? 'text-school-primary bg-school-primary/5 dark:text-school-secondary dark:bg-school-secondary/5' 
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -253,7 +253,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-black border-b border-black/10 dark:border-white/10 transition-colors duration-300">
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -266,10 +266,10 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <span className="text-xl font-bold font-display text-black dark:text-white hidden sm:inline">
+              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary hidden sm:inline">
                 THEE NDEJJEAN CONNECT
               </span>
-              <span className="text-xl font-bold font-display text-black dark:text-white sm:hidden">
+              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary sm:hidden">
                 TNC
               </span>
             </div>
@@ -281,8 +281,8 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               onClick={() => setActiveTab('home')}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeTab === 'home' 
-                  ? 'text-black bg-black/10 dark:text-white dark:bg-white/10' 
-                  : 'text-black/60 dark:text-white/60 hover:text-black hover:bg-black/5 dark:hover:text-white dark:hover:bg-white/5'
+                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
               }`}
             >
               <HomeIcon className="w-4 h-4" />
@@ -302,8 +302,8 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               onClick={() => setActiveTab('messages')}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeTab === 'messages' 
-                  ? 'text-black bg-black/10 dark:text-white dark:bg-white/10' 
-                  : 'text-black/60 dark:text-white/60 hover:text-black hover:bg-black/5 dark:hover:text-white dark:hover:bg-white/5'
+                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
               }`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -319,20 +319,20 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               darkMode={darkMode}
             />
             
-            <div className="h-6 w-px bg-black/10 dark:bg-white/10 mx-2"></div>
+            <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2"></div>
 
             {/* Dark Mode Toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="relative flex items-center w-12 h-6 bg-white dark:bg-black border border-black/10 dark:border-white/20 rounded-full p-1 transition-colors duration-300 focus:outline-none"
+              className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
               title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               <motion.div
                 animate={{ x: darkMode ? 24 : 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="w-4 h-4 bg-black dark:bg-white rounded-full shadow-sm flex items-center justify-center"
+                className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
               >
-                {darkMode ? <Moon className="w-2.5 h-2.5 text-black" /> : <Sun className="w-2.5 h-2.5 text-white" />}
+                {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
               </motion.div>
             </button>
 
@@ -455,14 +455,14 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                 <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Dark Mode</span>
                 <button
                   onClick={() => setDarkMode(!darkMode)}
-                  className="relative flex items-center w-12 h-6 bg-white dark:bg-black border border-slate-200 dark:border-white/20 rounded-full p-1 transition-colors duration-300 focus:outline-none"
+                  className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
                 >
                   <motion.div
                     animate={{ x: darkMode ? 24 : 0 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-black dark:bg-white rounded-full shadow-sm flex items-center justify-center"
+                    className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
                   >
-                    {darkMode ? <Moon className="w-2.5 h-2.5 text-black" /> : <Sun className="w-2.5 h-2.5 text-white" />}
+                    {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
                   </motion.div>
                 </button>
               </div>
@@ -2570,7 +2570,7 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-black overflow-hidden z-[9999]">
+    <div className="fixed inset-0 flex items-center justify-center bg-white overflow-hidden z-[9999]">
       {/* Corner Waves - Top Left */}
       <div className="absolute top-0 left-0 w-64 h-64 pointer-events-none">
         <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -2590,20 +2590,20 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative w-[380px] p-10 bg-white dark:bg-black rounded-[20px] border-2 border-black dark:border-white shadow-2xl text-center animate-float-card z-10"
+        className="relative w-[380px] p-10 bg-[#0a1f44] rounded-[20px] border-2 border-[#ffd700] shadow-[0_20px_60px_rgba(10,31,68,0.3)] text-center animate-float-card z-10"
       >
         {/* Back Button */}
         <button 
           onClick={onBack}
-          className="absolute top-4 left-4 z-20 p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
+          className="absolute top-4 left-4 z-20 p-2 text-white/40 hover:text-[#ffd700] transition-colors"
           title="Back to Home"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         {/* White Scrolls in Corners */}
-        <ScrollText className="absolute top-4 left-4 text-black/20 dark:text-white/20 w-6 h-6 rotate-[-15deg]" />
-        <ScrollText className="absolute bottom-4 right-4 text-black/20 dark:text-white/20 w-6 h-6 rotate-[165deg]" />
+        <ScrollText className="absolute top-4 left-4 text-white/40 w-6 h-6 rotate-[-15deg]" />
+        <ScrollText className="absolute bottom-4 right-4 text-white/40 w-6 h-6 rotate-[165deg]" />
 
         {/* Logo */}
         <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
@@ -2615,8 +2615,8 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
           />
         </div>
 
-        <h2 className="text-black dark:text-white text-2xl font-bold mb-1 uppercase tracking-tight">Ndejje Senior Secondary School</h2>
-        <h4 className="text-black/60 dark:text-white/60 font-light mb-6 tracking-[2px] text-sm uppercase">Connect Portal</h4>
+        <h2 className="text-[#ffd700] text-2xl font-bold mb-1 uppercase tracking-tight">Ndejje Senior Secondary School</h2>
+        <h4 className="text-white font-light mb-6 tracking-[2px] text-sm uppercase">Connect Portal</h4>
 
         {error && (
           <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-4 text-xs font-medium border border-red-500/30">
@@ -2633,11 +2633,11 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           {mode === 'signup' && (
             <div className="space-y-1">
-              <label className="text-black dark:text-white text-xs font-semibold ml-1">Full Name</label>
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Full Name</label>
               <input 
                 type="text" 
                 placeholder="Enter your full name"
-                className="w-full p-3 rounded-lg border border-black/10 dark:border-white/10 outline-none text-sm focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-black text-black dark:text-white"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
                 required
@@ -2647,11 +2647,11 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
 
           {(mode === 'login' || mode === 'signup' || mode === 'forgot') && (
             <div className="space-y-1">
-              <label className="text-black dark:text-white text-xs font-semibold ml-1">Email</label>
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Email</label>
               <input 
                 type="email" 
                 placeholder="Enter your email"
-                className="w-full p-3 rounded-lg border border-black/10 dark:border-white/10 outline-none text-sm focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-black text-black dark:text-white"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
                 required
@@ -2661,11 +2661,11 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
 
           {mode === 'reset' && (
             <div className="space-y-1">
-              <label className="text-black dark:text-white text-xs font-semibold ml-1">Reset Token</label>
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Reset Token</label>
               <input 
                 type="text" 
                 placeholder="Enter token from email"
-                className="w-full p-3 rounded-lg border border-black/10 dark:border-white/10 outline-none text-sm focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-black text-black dark:text-white"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white"
                 value={formData.token}
                 onChange={e => setFormData({...formData, token: e.target.value})}
                 required
@@ -2676,14 +2676,14 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
           {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-black dark:text-white text-xs font-semibold ml-1">
+                <label className="text-[#ffd700] text-xs font-semibold ml-1">
                   {mode === 'reset' ? 'New Password' : 'Password'}
                 </label>
                 {mode === 'login' && (
                   <button 
                     type="button"
                     onClick={() => setMode('forgot')}
-                    className="text-[10px] font-bold text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+                    className="text-[10px] font-bold text-white/60 hover:text-[#ffd700] transition-colors"
                   >
                     Forgot?
                   </button>
@@ -2692,7 +2692,7 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
               <input 
                 type="password" 
                 placeholder="Enter password"
-                className="w-full p-3 rounded-lg border border-black/10 dark:border-white/10 outline-none text-sm focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-black text-black dark:text-white"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-yellow-100"
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
                 required
@@ -2702,9 +2702,9 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
 
           {mode === 'signup' && (
             <div className="space-y-1">
-              <label className="text-black dark:text-white text-xs font-semibold ml-1">Role</label>
+              <label className="text-[#ffd700] text-xs font-semibold ml-1">Role</label>
               <select 
-                className="w-full p-3 rounded-lg border border-black/10 dark:border-white/10 outline-none text-sm focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-black text-black dark:text-white appearance-none"
+                className="w-full p-3 rounded-lg border-none outline-none text-sm focus:ring-2 focus:ring-[#ffd700] transition-all bg-white appearance-none"
                 value={formData.role}
                 onChange={e => setFormData({...formData, role: e.target.value})}
                 required
@@ -2716,28 +2716,28 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
             </div>
           )}
 
-          <button type="submit" className="w-full p-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg text-base hover:scale-[1.05] transition-all mt-2">
+          <button type="submit" className="w-full p-3 bg-[#ffd700] text-[#0a1f44] font-bold rounded-lg text-base hover:bg-white hover:scale-[1.05] transition-all mt-2">
             {mode === 'login' ? 'Login' : 
              mode === 'signup' ? 'Register' : 
              mode === 'forgot' ? 'Send Reset Link' : 'Reset Password'}
           </button>
         </form>
 
-        <div className="mt-6 text-black dark:text-white text-[13px] font-medium">
+        <div className="mt-6 text-white text-[13px] font-medium">
           {mode === 'login' ? (
             <p>
               Don't have an account?{' '}
-              <button onClick={() => setMode('signup')} className="text-black dark:text-white font-bold hover:underline">Register</button>
+              <button onClick={() => setMode('signup')} className="text-[#ffd700] font-bold hover:underline">Register</button>
             </p>
           ) : (
             <p>
               Already have an account?{' '}
-              <button onClick={() => setMode('login')} className="text-black dark:text-white font-bold hover:underline">Login</button>
+              <button onClick={() => setMode('login')} className="text-[#ffd700] font-bold hover:underline">Login</button>
             </p>
           )}
         </div>
 
-        <div className="mt-4 text-black/60 dark:text-white/60 text-[11px] uppercase tracking-widest">
+        <div className="mt-4 text-white/60 text-[11px] uppercase tracking-widest">
           Uniting Parents, Students & Administration
         </div>
       </motion.div>
@@ -2947,7 +2947,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-black transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#050505] transition-colors duration-300">
       <Navbar 
         user={user} 
         onLogout={handleLogout} 
@@ -3068,7 +3068,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-black rounded-[2.5rem] shadow-2xl border border-black/5 dark:border-white/5 overflow-hidden p-8 text-center"
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 text-center"
             >
               <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <LogOut className="w-10 h-10 text-red-600" />
