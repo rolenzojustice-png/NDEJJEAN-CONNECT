@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Supabase Configuration
-const supabaseUrl = process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.com";
+const supabaseUrl = process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.co";
 const supabaseKey = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhic2F0ZGZjaGdqdmdla2tjZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzU1NzcsImV4cCI6MjA4ODMxMTU3N30.7lTVZG4N4KUozXF5oNgvRG6yj7DnU0lFaTnP_euKQYI";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
