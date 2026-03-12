@@ -13,7 +13,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-school-primary/10 selection:text-school-primary transition-colors duration-300;
+    @apply bg-white text-slate-900 font-sans antialiased selection:bg-school-primary/10 selection:text-school-primary transition-colors duration-300;
   }
   
   .dark body {

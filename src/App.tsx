@@ -2947,7 +2947,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#050505] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#050505] transition-colors duration-300">
       <Navbar 
         user={user} 
         onLogout={handleLogout} 
