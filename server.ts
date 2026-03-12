@@ -96,18 +96,28 @@ async function startServer() {
   });
 
   app.post("/api/auth/login", async (req, res) => {
-    const { email, password } = req.body;
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("id, name, email, role, avatar, bio, phone")
-      .eq("email", email)
-      .eq("password", password)
-      .single();
+    try {
+      const { email, password } = req.body;
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("id, name, email, role, avatar, bio, phone")
+        .eq("email", email)
+        .eq("password", password)
+        .single();
 
-    if (user) {
-      res.json(user);
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
+      if (error) {
+        console.error("Login error:", error);
+        return res.status(401).json({ error: "Invalid credentials or database error" });
+      }
+
+      if (user) {
+        res.json(user);
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    } catch (e: any) {
+      console.error("Server error during login:", e);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
@@ -460,45 +470,55 @@ async function startServer() {
 
   // Forum Routes
   app.get("/api/forum/categories", async (req, res) => {
-    // This requires some aggregation which is better done via RPC or multiple queries in Supabase
-    const { data: categories } = await supabase.from("forum_categories").select("*");
-    
-    const formattedCategories = await Promise.all(categories?.map(async (c) => {
-      const { count: topicsCount } = await supabase.from("forum_topics").select("*", { count: 'exact', head: true }).eq("category_id", c.id);
+    try {
+      const { data: categories, error } = await supabase.from("forum_categories").select("*");
+      if (error) throw error;
       
-      // For posts count, we need to join topics
-      const { data: topics } = await supabase.from("forum_topics").select("id").eq("category_id", c.id);
-      const topicIds = topics?.map(t => t.id) || [];
-      const { count: postsCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).in("topic_id", topicIds);
+      const formattedCategories = await Promise.all((categories || []).map(async (c) => {
+        const { count: topicsCount } = await supabase.from("forum_topics").select("*", { count: 'exact', head: true }).eq("category_id", c.id);
+        
+        const { data: topics } = await supabase.from("forum_topics").select("id").eq("category_id", c.id);
+        const topicIds = (topics || []).map(t => t.id);
+        const { count: postsCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).in("topic_id", topicIds);
 
-      return {
-        ...c,
-        topics_count: topicsCount || 0,
-        posts_count: postsCount || 0
-      };
-    }) || []);
+        return {
+          ...c,
+          topics_count: topicsCount || 0,
+          posts_count: postsCount || 0
+        };
+      }));
 
-    res.json(formattedCategories);
+      res.json(formattedCategories);
+    } catch (e: any) {
+      console.error("Error fetching categories:", e);
+      res.status(500).json({ error: e.message || "Failed to fetch categories" });
+    }
   });
 
   app.get("/api/forum/categories/:id/topics", async (req, res) => {
-    const { data: topics } = await supabase
-      .from("forum_topics")
-      .select("*, author:users!user_id(name, role)")
-      .eq("category_id", req.params.id)
-      .order("created_at", { ascending: false });
+    try {
+      const { data: topics, error } = await supabase
+        .from("forum_topics")
+        .select("*, author:users!user_id(name, role)")
+        .eq("category_id", req.params.id)
+        .order("created_at", { ascending: false });
 
-    const formattedTopics = await Promise.all(topics?.map(async (t) => {
-      const { count: repliesCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).eq("topic_id", t.id);
-      return {
-        ...t,
-        author_name: t.author?.name,
-        author_role: t.author?.role,
-        replies_count: repliesCount || 0
-      };
-    }) || []);
+      if (error) throw error;
 
-    res.json(formattedTopics);
+      const formattedTopics = await Promise.all((topics || []).map(async (t) => {
+        const { count: repliesCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).eq("topic_id", t.id);
+        return {
+          ...t,
+          author_name: t.author?.name,
+          author_role: t.author?.role,
+          replies_count: repliesCount || 0
+        };
+      }));
+
+      res.json(formattedTopics);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   app.post("/api/forum/topics", async (req, res) => {
@@ -566,6 +586,18 @@ async function startServer() {
     app.get("*", (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
+  }
+
+  // Test Supabase Connection
+  try {
+    const { error } = await supabase.from("users").select("id").limit(1);
+    if (error) {
+      console.error("Supabase connection test failed. Did you run the SQL script? Error:", error.message);
+    } else {
+      console.log("Supabase connection successful.");
+    }
+  } catch (e) {
+    console.error("Supabase connection test threw an error:", e);
   }
 
   server.listen(PORT, "0.0.0.0", () => {

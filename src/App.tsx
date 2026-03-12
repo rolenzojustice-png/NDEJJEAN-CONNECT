@@ -2538,28 +2538,34 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
       payload = { token: formData.token, password: formData.password };
     }
 
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json().catch(() => ({ error: 'Server returned an invalid response' }));
 
-    if (res.ok) {
-      if (mode === 'login' || mode === 'signup') {
-        onLogin(data);
-      } else if (mode === 'forgot') {
-        setMessage(data.message);
-        if (data.token) {
-          setFormData(prev => ({ ...prev, token: data.token }));
-          setMode('reset');
+      if (res.ok) {
+        if (mode === 'login' || mode === 'signup') {
+          onLogin(data);
+        } else if (mode === 'forgot') {
+          setMessage(data.message);
+          if (data.token) {
+            setFormData(prev => ({ ...prev, token: data.token }));
+            setMode('reset');
+          }
+        } else if (mode === 'reset') {
+          setMessage(data.message);
+          setMode('login');
         }
-      } else if (mode === 'reset') {
-        setMessage(data.message);
-        setMode('login');
+      } else {
+        setError(data.error || 'An unexpected error occurred');
       }
-    } else {
-      setError(data.error);
+    } catch (err) {
+      console.error('Auth error:', err);
+      setError('Failed to connect to the server');
     }
   };
 
