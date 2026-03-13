@@ -12,7 +12,8 @@ import {
   MessageSquare, 
   User as UserIcon,
   Clock,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -173,6 +174,39 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     }
   };
 
+  const handleDeleteTopic = async (e: React.MouseEvent, topicId: number) => {
+    e.stopPropagation();
+    if (!user || user.role !== 'admin') return;
+    if (!confirm('Are you sure you want to delete this topic and all its posts?')) return;
+
+    try {
+      const res = await fetch(`/api/forum/topics/${topicId}?user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        if (selectedCategory) fetchTopics(selectedCategory.id);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    if (!user || user.role !== 'admin') return;
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
+    try {
+      const res = await fetch(`/api/forum/posts/${postId}?user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        if (selectedTopic) fetchTopicDetail(selectedTopic.id);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -301,9 +335,20 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
                         <span>{formatDate(topic.created_at)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">{topic.replies_count}</div>
-                      <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Replies</div>
+                    <div className="text-right flex items-center gap-4">
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">{topic.replies_count}</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Replies</div>
+                      </div>
+                      {user?.role === 'admin' && (
+                        <button 
+                          onClick={(e) => handleDeleteTopic(e, topic.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                          title="Delete Topic"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-300" />
                   </button>
@@ -377,6 +422,15 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
                         <span className="text-[10px] text-slate-400">{formatDate(post.created_at)}</span>
                       </div>
                     </div>
+                    {user?.role === 'admin' && (
+                      <button 
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                        title="Delete Post"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   <div className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap">
                     {post.content}

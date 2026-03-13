@@ -753,6 +753,19 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
     }
   };
 
+  const handleDeletePost = async (postId: number) => {
+    if (!user || (user.role !== 'admin' && user.role !== 'teacher')) return;
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    const res = await fetch(`/api/posts/${postId}?admin_id=${user.id}`, {
+      method: 'DELETE'
+    });
+    
+    if (res.ok) {
+      fetchPosts();
+    }
+  };
+
   const openComments = async (post: Post) => {
     setSelectedPost(post);
     const res = await fetch(`/api/posts/${post.id}/comments`);
@@ -926,13 +939,22 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
                     </div>
                   </div>
                   {user && (user.role === 'admin' || user.role === 'teacher') && (
-                    <button 
-                      onClick={() => startEditPost(post)}
-                      className="p-2.5 text-slate-400 hover:text-school-primary hover:bg-school-primary/5 rounded-xl transition-all"
-                      title="Edit Post"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => startEditPost(post)}
+                        className="p-2.5 text-slate-400 hover:text-school-primary hover:bg-school-primary/5 rounded-xl transition-all"
+                        title="Edit Post"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Delete Post"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
                 
@@ -1514,11 +1536,12 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
 };
 
 const AdminDashboard = ({ user }: { user: User }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'posts' | 'events' | 'announcements'>('users');
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'posts' | 'events' | 'announcements' | 'forum'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [events, setEvents] = useState<SchoolEvent[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [forumTopics, setForumTopics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -1547,6 +1570,16 @@ const AdminDashboard = ({ user }: { user: User }) => {
         const res = await fetch('/api/announcements');
         const data = await res.json();
         setAnnouncements(data);
+      } else if (activeSubTab === 'forum') {
+        const res = await fetch('/api/forum/categories');
+        const categories = await res.json();
+        const allTopics = [];
+        for (const cat of categories) {
+          const tRes = await fetch(`/api/forum/categories/${cat.id}/topics`);
+          const tData = await tRes.json();
+          allTopics.push(...tData.map((t: any) => ({ ...t, category_name: cat.name })));
+        }
+        setForumTopics(allTopics);
       }
     } catch (e) {
       console.error(e);
@@ -1584,6 +1617,12 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const handleDeleteAnnouncement = async (id: number) => {
     if (!confirm('Are you sure you want to delete this announcement?')) return;
     const res = await fetch(`/api/announcements/${id}?admin_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
+  };
+
+  const handleDeleteForumTopic = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this forum topic and all its posts?')) return;
+    const res = await fetch(`/api/forum/topics/${id}?user_id=${user.id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
   };
 
@@ -1649,6 +1688,15 @@ const AdminDashboard = ({ user }: { user: User }) => {
           >
             <Bell className="w-4 h-4" />
             Announcements
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('forum')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              activeSubTab === 'forum' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Forum
           </button>
         </div>
       </div>
@@ -1811,6 +1859,36 @@ const AdminDashboard = ({ user }: { user: User }) => {
                       </button>
                       <button 
                         onClick={() => handleDeleteAnnouncement(a.id)}
+                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {activeSubTab === 'forum' && (
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Topic</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {forumTopics.map(t => (
+                  <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-700 truncate max-w-xs">{t.title}</td>
+                    <td className="px-6 py-4 text-slate-500">{t.category_name}</td>
+                    <td className="px-6 py-4 text-slate-500">{t.author_name}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => handleDeleteForumTopic(t.id)}
                         className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -2091,6 +2169,20 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
     setMessages(data);
   };
 
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!user || user.role !== 'admin') return;
+    if (!confirm('Are you sure you want to delete this message?')) return;
+
+    const res = await fetch(`/api/messages/${messageId}?user_id=${user.id}`, {
+      method: 'DELETE'
+    });
+
+    if (res.ok) {
+      if (activeConversation) fetchMessages(activeConversation);
+      fetchConversations();
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !activeConversation || !newMessage.trim()) return;
@@ -2192,11 +2284,20 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
                   key={msg.id}
                   className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`max-w-[70%] p-4 rounded-2xl text-sm ${
+                  <div className={`max-w-[70%] p-4 rounded-2xl text-sm relative group/msg ${
                     msg.sender_id === user.id 
                       ? 'bg-school-primary text-white rounded-tr-none' 
                       : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
                   }`}>
+                    {user.role === 'admin' && (
+                      <button 
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity shadow-lg"
+                        title="Delete Message"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
                     <p className="leading-relaxed">{msg.content}</p>
                     <p className={`text-[10px] mt-1 ${msg.sender_id === user.id ? 'text-white/60' : 'text-slate-400'}`}>
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

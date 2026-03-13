@@ -354,6 +354,15 @@ async function startServer() {
     res.json({ id: message.id });
   });
 
+  app.delete("/api/messages/:id", async (req, res) => {
+    const { user_id } = req.query;
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+
+    await supabase.from("messages").delete().eq("id", req.params.id);
+    res.json({ success: true });
+  });
+
   // Events Routes
   app.get("/api/events", async (req, res) => {
     const { data: events } = await supabase.from("events").select("*").order("date", { ascending: true });
@@ -578,6 +587,26 @@ async function startServer() {
     }
 
     res.json({ id: post.id });
+  });
+
+  app.delete("/api/forum/topics/:id", async (req, res) => {
+    const { user_id } = req.query;
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+
+    // Delete all posts in topic first
+    await supabase.from("forum_posts").delete().eq("topic_id", req.params.id);
+    await supabase.from("forum_topics").delete().eq("id", req.params.id);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/forum/posts/:id", async (req, res) => {
+    const { user_id } = req.query;
+    const { data: user } = await supabase.from("users").select("role").eq("id", user_id).single();
+    if (user?.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+
+    await supabase.from("forum_posts").delete().eq("id", req.params.id);
+    res.json({ success: true });
   });
 
   // Vite middleware for development
