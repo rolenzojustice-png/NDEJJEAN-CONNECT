@@ -509,7 +509,7 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
   return (
     <div className="space-y-16 pb-12">
       {/* Hero Section with Video Background */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-school-primary text-white min-h-[600px] flex items-center p-8 md:p-20 shadow-2xl">
+      <section className="relative overflow-hidden rounded-[2rem] bg-school-primary text-white min-h-[500px] md:min-h-[600px] flex items-center p-6 md:p-20 shadow-2xl">
         {/* Video Background Overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-r from-school-primary/90 via-school-primary/60 to-transparent z-10"></div>
@@ -531,22 +531,22 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-school-secondary/20 backdrop-blur-md text-school-secondary text-sm font-bold tracking-wider uppercase mb-6 border border-school-secondary/30">
+            <span className="inline-block px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-school-secondary/20 backdrop-blur-md text-school-secondary text-[10px] md:text-sm font-bold tracking-wider uppercase mb-4 md:mb-6 border border-school-secondary/30">
               Est. 1963 • Excellence in Education
             </span>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
+            <h1 className="text-4xl md:text-7xl font-bold mb-4 md:mb-6 leading-[1.1] tracking-tight">
               No Pain <br /> 
               <span className="text-school-secondary">No Gains</span>
             </h1>
-            <p className="text-white/80 text-xl mb-10 max-w-xl leading-relaxed">
+            <p className="text-white/80 text-base md:text-xl mb-8 md:mb-10 max-w-xl leading-relaxed">
               Welcome to Ndejje Senior Secondary School. We are a Christ-centered institution dedicated to nurturing holistically competent citizens for a prosperous future.
             </p>
-            <div className="flex flex-wrap gap-5">
+            <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveTab('blog')} 
-                className="bg-school-secondary text-school-primary px-8 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-school-secondary/20 hover:bg-yellow-400 transition-all flex items-center gap-2"
+                className="bg-school-secondary text-school-primary px-6 py-3 md:px-8 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-xl shadow-school-secondary/20 hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"
               >
                 Explore Blog <ChevronRight className="w-5 h-5" />
               </motion.button>
@@ -554,7 +554,7 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveTab('events')} 
-                className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white/20 transition-all"
+                className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-6 py-3 md:px-8 md:py-4 rounded-2xl font-bold text-base md:text-lg hover:bg-white/20 transition-all flex items-center justify-center"
               >
                 School Events
               </motion.button>
@@ -603,17 +603,17 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
       </section>
 
       {/* Announcements Section */}
-      <section className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+      <section className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 z-0"></div>
         
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-8 md:mb-10">
             <div>
-              <h2 className="text-3xl font-bold mb-2">School Announcements</h2>
-              <p className="text-slate-500">Important updates for the Ndejjean community</p>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">School Announcements</h2>
+              <p className="text-sm md:text-base text-slate-500">Important updates for the Ndejjean community</p>
             </div>
-            <div className="p-3 bg-school-primary/5 rounded-2xl">
-              <Bell className="text-school-primary w-7 h-7" />
+            <div className="p-2 md:p-3 bg-school-primary/5 rounded-2xl">
+              <Bell className="text-school-primary w-6 h-6 md:w-7 md:h-7" />
             </div>
           </div>
           
@@ -627,21 +627,21 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
                 <motion.div 
                   key={item.id} 
                   whileHover={{ x: 10 }}
-                  className="flex items-center justify-between p-5 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-5 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group gap-4"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl group-hover:bg-white transition-colors">
+                  <div className="flex items-center gap-4 md:gap-5">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xl md:text-2xl group-hover:bg-white transition-colors">
                       {item.icon}
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg group-hover:text-school-primary transition-colors">{item.title}</h4>
-                      <div className="flex items-center gap-2 text-slate-400 text-sm mt-1">
+                      <h4 className="font-bold text-base md:text-lg group-hover:text-school-primary transition-colors">{item.title}</h4>
+                      <div className="flex items-center gap-2 text-slate-400 text-xs md:text-sm mt-1">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(item.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
-                  <span className="px-4 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-widest group-hover:bg-school-primary group-hover:text-white transition-colors">
+                  <span className="self-start sm:self-auto px-3 py-1 md:px-4 md:py-1.5 bg-slate-100 text-slate-600 text-[9px] md:text-[10px] font-black rounded-full uppercase tracking-widest group-hover:bg-school-primary group-hover:text-white transition-colors">
                     {item.tag}
                   </span>
                 </motion.div>
@@ -804,11 +804,11 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
   if (loading) return <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-school-primary"></div></div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-12 px-4 sm:px-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">School Blog</h1>
-          <p className="text-slate-600">Insights and updates from our community</p>
+          <h1 className="text-2xl md:text-3xl font-bold">School Blog</h1>
+          <p className="text-sm md:text-base text-slate-600">Insights and updates from our community</p>
         </div>
         {user && (user.role === 'admin' || user.role === 'teacher') && (
           <button 
@@ -922,19 +922,19 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
               id={`post-${post.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300"
+              className="bg-white rounded-2xl md:rounded-3xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300"
             >
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-school-primary/10 rounded-2xl flex items-center justify-center text-school-primary">
-                      <UserIcon className="w-6 h-6" />
+              <div className="p-5 md:p-8">
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-school-primary/10 rounded-xl md:rounded-2xl flex items-center justify-center text-school-primary">
+                      <UserIcon className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900">{post.author_name}</p>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <p className="font-bold text-slate-900 text-sm md:text-base">{post.author_name}</p>
+                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500">
                         <Clock className="w-3 h-3" />
-                        {new Date(post.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                        {new Date(post.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                       </div>
                     </div>
                   </div>
@@ -958,16 +958,16 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
                   )}
                 </div>
                 
-                <h2 className="text-3xl font-black mb-4 text-slate-900 leading-tight">{post.title}</h2>
+                <h2 className="text-xl md:text-3xl font-black mb-3 md:mb-4 text-slate-900 leading-tight">{post.title}</h2>
                 
                 {post.image && (
-                  <div className="mb-6 rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner">
-                    <img src={post.image} alt={post.title} className="w-full max-h-[500px] object-cover hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                  <div className="mb-4 md:mb-6 rounded-xl md:rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner">
+                    <img src={post.image} alt={post.title} className="w-full max-h-[300px] md:max-h-[500px] object-cover hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
                   </div>
                 )}
                 
                 <div className="relative">
-                  <p className="text-slate-700 leading-relaxed mb-6 whitespace-pre-wrap text-lg">
+                  <p className="text-slate-700 leading-relaxed mb-4 md:mb-6 whitespace-pre-wrap text-base md:text-lg">
                     {displayContent}
                   </p>
                   {needsReadMore && (
@@ -1314,13 +1314,13 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
   if (loading) return <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-school-primary"></div></div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 pb-12 px-4 sm:px-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Upcoming Events</h1>
-          <p className="text-slate-600">Mark your calendars for these school highlights</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Upcoming Events</h1>
+          <p className="text-sm md:text-base text-slate-600">Mark your calendars for these school highlights</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <div className="bg-slate-100 p-1 rounded-2xl flex gap-1">
             <button 
               onClick={() => setViewMode('list')}
@@ -1425,15 +1425,15 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
                 key={event.id}
                 id={`event-${event.id}`}
                 whileHover={{ scale: 1.01 }}
-                className="bg-white rounded-2xl border border-slate-200 p-6 flex gap-6 relative group"
+                className="bg-white rounded-2xl border border-slate-200 p-5 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 relative group"
               >
-                <div className="flex-shrink-0 w-20 h-20 bg-school-primary/10 rounded-2xl flex flex-col items-center justify-center text-school-primary">
-                  <span className="text-xs font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                  <span className="text-3xl font-bold">{new Date(event.date).getDate()}</span>
+                <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-school-primary/10 rounded-xl md:rounded-2xl flex flex-col items-center justify-center text-school-primary">
+                  <span className="text-[10px] md:text-xs font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                  <span className="text-2xl md:text-3xl font-bold">{new Date(event.date).getDate()}</span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-1">{event.title}</h3>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 text-sm mb-3">
+                  <h3 className="text-lg md:text-xl font-bold mb-1">{event.title}</h3>
+                  <div className="flex flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1 text-slate-500 text-xs md:text-sm mb-3">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(event.date).toLocaleDateString()}</span>
@@ -1646,261 +1646,364 @@ const AdminDashboard = ({ user }: { user: User }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-slate-600">Manage school portal content and users</p>
-        </div>
-        <div className="flex bg-slate-100 p-1 rounded-2xl gap-1">
-          <button 
-            onClick={() => setActiveSubTab('users')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeSubTab === 'users' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Users
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('posts')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeSubTab === 'posts' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Posts
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('events')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeSubTab === 'events' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            Events
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('announcements')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeSubTab === 'announcements' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Bell className="w-4 h-4" />
-            Announcements
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('forum')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeSubTab === 'forum' ? 'bg-white text-school-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            Forum
-          </button>
-        </div>
+    <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Sidebar Navigation */}
+        <aside className="w-full lg:w-64 flex-shrink-0">
+          <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm sticky top-24">
+            <div className="mb-6 px-2">
+              <h1 className="text-xl font-bold">Admin Panel</h1>
+              <p className="text-xs text-slate-500">School Management</p>
+            </div>
+            <nav className="space-y-1">
+              {[
+                { id: 'users', label: 'Users', icon: Users },
+                { id: 'posts', label: 'Posts', icon: BookOpen },
+                { id: 'events', label: 'Events', icon: Calendar },
+                { id: 'announcements', label: 'Announcements', icon: Bell },
+                { id: 'forum', label: 'Forum', icon: MessageSquare },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSubTab(item.id as any)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                    activeSubTab === item.id 
+                      ? 'bg-school-primary text-white shadow-lg shadow-school-primary/20' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 space-y-8 min-w-0">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Posts</p>
+                  <h3 className="text-2xl font-black text-slate-900">{posts.length}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-50 text-green-600 rounded-2xl">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Users</p>
+                  <h3 className="text-2xl font-black text-slate-900">{users.length}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Events</p>
+                  <h3 className="text-2xl font-black text-slate-900">{events.length}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl">
+                  <Bell className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Alerts</p>
+                  <h3 className="text-2xl font-black text-slate-900">{announcements.length}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Tab Content */}
+          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-xl font-bold capitalize">{activeSubTab} Management</h2>
+              {activeSubTab === 'announcements' && (
+                <button 
+                  onClick={() => {
+                    setEditingAnnouncement(null);
+                    setAnnouncementForm({ title: '', content: '', tag: 'General', icon: '📢' });
+                    setShowCreateAnnouncement(true);
+                  }}
+                  className="btn-primary flex items-center justify-center gap-2"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  New Announcement
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center p-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-school-primary"></div>
+              </div>
+            ) : (
+              <div className="p-0">
+                {activeSubTab === 'users' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Name</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Email</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {users.map(u => (
+                          <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700">{u.name}</td>
+                            <td className="px-6 py-4 text-slate-500">{u.email}</td>
+                            <td className="px-6 py-4">
+                              <select 
+                                value={u.role}
+                                onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                                className="bg-slate-100 border-none rounded-lg text-xs font-bold p-1 focus:ring-2 focus:ring-school-primary"
+                                disabled={u.id === user.id}
+                              >
+                                <option value="student">Student</option>
+                                <option value="parent">Parent</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleDeleteUser(u.id)}
+                                disabled={u.id === user.id}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-30"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeSubTab === 'posts' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {posts.map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700 truncate max-w-xs">{p.title}</td>
+                            <td className="px-6 py-4 text-slate-500">{p.author_name}</td>
+                            <td className="px-6 py-4 text-slate-500">{new Date(p.created_at).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleDeletePost(p.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeSubTab === 'events' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Location</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {events.map(e => (
+                          <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700">{e.title}</td>
+                            <td className="px-6 py-4 text-slate-500">{new Date(e.date).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 text-slate-500">{e.location}</td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleDeleteEvent(e.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeSubTab === 'announcements' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Icon</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Tag</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {announcements.map(a => (
+                          <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 text-xl">{a.icon}</td>
+                            <td className="px-6 py-4 font-bold text-slate-700">{a.title}</td>
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black rounded-full uppercase tracking-widest">
+                                {a.tag}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => {
+                                    setEditingAnnouncement(a);
+                                    setAnnouncementForm({ title: a.title, content: a.content, tag: a.tag, icon: a.icon });
+                                    setShowCreateAnnouncement(true);
+                                  }}
+                                  className="p-2 text-slate-400 hover:text-school-primary transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteAnnouncement(a.id)}
+                                  className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeSubTab === 'forum' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
+                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {forumTopics.map(t => (
+                          <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700">{t.title}</td>
+                            <td className="px-6 py-4 text-slate-500">{t.category_name}</td>
+                            <td className="px-6 py-4 text-slate-500">{t.author_name}</td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleDeleteForumTopic(t.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Dedicated Post Announcement Section */}
+          <section className="bg-school-primary text-white rounded-[2.5rem] p-8 md:p-16 shadow-2xl shadow-school-primary/20 flex flex-col items-center text-center max-w-4xl mx-auto">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
+              <Bell className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 tracking-tight">Post Official Announcement</h2>
+            <p className="text-white/70 text-sm md:text-lg mb-10 max-w-2xl leading-relaxed">
+              Broadcast important school updates, policy changes, or emergency alerts directly to the entire Ndejjean community.
+            </p>
+            <div className="w-full bg-white/10 backdrop-blur-md p-4 md:p-8 rounded-3xl border border-white/20">
+              <div className="space-y-4 text-left">
+                <div>
+                  <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest mb-2 opacity-60">Announcement Title</label>
+                  <input 
+                    type="text"
+                    placeholder="Enter a clear, concise title..."
+                    value={announcementForm.title}
+                    onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl p-3 md:p-4 text-sm md:text-base text-white placeholder:text-white/30 focus:bg-white/20 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest mb-2 opacity-60">Message Content</label>
+                  <textarea 
+                    placeholder="Write your detailed announcement here..."
+                    value={announcementForm.content}
+                    onChange={(e) => setAnnouncementForm({...announcementForm, content: e.target.value})}
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 md:p-6 text-sm md:text-base text-white placeholder:text-white/30 focus:bg-white/20 outline-none transition-all min-h-[150px] md:min-h-[200px]"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] md:text-xs font-black uppercase tracking-widest mb-2 opacity-60">Category Tag</label>
+                    <select 
+                      value={announcementForm.tag}
+                      onChange={(e) => setAnnouncementForm({...announcementForm, tag: e.target.value})}
+                      className="w-full bg-white/10 border border-white/20 rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:bg-white/20 outline-none transition-all appearance-none"
+                    >
+                      <option value="General" className="text-slate-900">General</option>
+                      <option value="Academic" className="text-slate-900">Academic</option>
+                      <option value="Event" className="text-slate-900">Event</option>
+                      <option value="Urgent" className="text-slate-900">Urgent</option>
+                    </select>
+                  </div>
+                  <button 
+                    onClick={handleSaveAnnouncement}
+                    className="bg-school-secondary text-school-primary px-8 py-4 rounded-2xl font-bold text-base md:text-lg shadow-xl shadow-school-secondary/20 hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-5 h-5" />
+                    Post Announcement
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
-
-      {activeSubTab === 'announcements' && (
-        <div className="flex justify-end mb-4">
-          <button 
-            onClick={() => {
-              setEditingAnnouncement(null);
-              setAnnouncementForm({ title: '', content: '', tag: 'General', icon: '📢' });
-              setShowCreateAnnouncement(true);
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <PlusCircle className="w-4 h-4" />
-            New Announcement
-          </button>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center p-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-school-primary"></div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          {activeSubTab === 'users' && (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Name</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Email</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-700">{u.name}</td>
-                    <td className="px-6 py-4 text-slate-500">{u.email}</td>
-                    <td className="px-6 py-4">
-                      <select 
-                        value={u.role}
-                        onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                        className="bg-slate-100 border-none rounded-lg text-xs font-bold p-1 focus:ring-2 focus:ring-school-primary"
-                        disabled={u.id === user.id}
-                      >
-                        <option value="student">Student</option>
-                        <option value="parent">Parent</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteUser(u.id)}
-                        disabled={u.id === user.id}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-30"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {activeSubTab === 'posts' && (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {posts.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-700 truncate max-w-xs">{p.title}</td>
-                    <td className="px-6 py-4 text-slate-500">{p.author_name}</td>
-                    <td className="px-6 py-4 text-slate-500">{new Date(p.created_at).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDeletePost(p.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {activeSubTab === 'events' && (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Date</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Location</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {events.map(e => (
-                  <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-700">{e.title}</td>
-                    <td className="px-6 py-4 text-slate-500">{e.date}</td>
-                    <td className="px-6 py-4 text-slate-500">{e.location}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteEvent(e.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {activeSubTab === 'announcements' && (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Icon</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Tag</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {announcements.map(a => (
-                  <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 text-xl">{a.icon}</td>
-                    <td className="px-6 py-4 font-bold text-slate-700">{a.title}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                        {a.tag}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <button 
-                        onClick={() => {
-                          setEditingAnnouncement(a);
-                          setAnnouncementForm({ title: a.title, content: a.content, tag: a.tag, icon: a.icon });
-                          setShowCreateAnnouncement(true);
-                        }}
-                        className="p-2 text-slate-400 hover:text-school-primary transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteAnnouncement(a.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {activeSubTab === 'forum' && (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Topic</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {forumTopics.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-700 truncate max-w-xs">{t.title}</td>
-                    <td className="px-6 py-4 text-slate-500">{t.category_name}</td>
-                    <td className="px-6 py-4 text-slate-500">{t.author_name}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteForumTopic(t.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
 
       {/* Announcement Modal */}
       <AnimatePresence>
@@ -2119,6 +2222,7 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
   const [users, setUsers] = useState<User[]>([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -2171,7 +2275,6 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
 
   const handleDeleteMessage = async (messageId: number) => {
     if (!user || user.role !== 'admin') return;
-    if (!confirm('Are you sure you want to delete this message?')) return;
 
     const res = await fetch(`/api/messages/${messageId}?user_id=${user.id}`, {
       method: 'DELETE'
@@ -2180,6 +2283,7 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
     if (res.ok) {
       if (activeConversation) fetchMessages(activeConversation);
       fetchConversations();
+      setMessageToDelete(null);
     }
   };
 
@@ -2212,9 +2316,9 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
   if (!user) return <Profile user={null} onLogout={() => {}} onUpdateUser={() => {}} />;
 
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex gap-6 pb-8">
+    <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex gap-0 md:gap-6 pb-8 px-4 sm:px-6">
       {/* Sidebar */}
-      <div className="w-80 flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden">
+      <div className={`w-full md:w-80 flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h2 className="text-xl font-bold">Messages</h2>
           <button 
@@ -2259,19 +2363,25 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden">
+      <div className={`flex-1 flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden ${activeConversation ? 'flex' : 'hidden md:flex'}`}>
         {activeConversation ? (
           <>
-            <div className="p-6 border-b border-slate-100 flex items-center gap-4">
+            <div className="p-4 md:p-6 border-b border-slate-100 flex items-center gap-4">
+              <button 
+                onClick={() => setActiveConversation(null)}
+                className="md:hidden p-2 -ml-2 hover:bg-slate-100 rounded-full text-slate-500"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
               <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
                 <UserIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold">
+                <h3 className="font-bold text-sm md:text-base">
                   {conversations.find(c => c.other_user_id === activeConversation)?.other_user_name || 
                    users.find(u => u.id === activeConversation)?.name}
                 </h3>
-                <p className="text-xs text-slate-500 capitalize">
+                <p className="text-[10px] md:text-xs text-slate-500 capitalize">
                   {conversations.find(c => c.other_user_id === activeConversation)?.other_user_role || 
                    users.find(u => u.id === activeConversation)?.role}
                 </p>
@@ -2291,7 +2401,7 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
                   }`}>
                     {user.role === 'admin' && (
                       <button 
-                        onClick={() => handleDeleteMessage(msg.id)}
+                        onClick={() => setMessageToDelete(msg.id)}
                         className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity shadow-lg"
                         title="Delete Message"
                       >
@@ -2343,6 +2453,49 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {messageToDelete && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMessageToDelete(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            ></motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 text-center"
+            >
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-10 h-10 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Delete Message?</h2>
+              <p className="text-slate-500 mb-8">
+                Are you sure you want to delete this message? This action cannot be undone and the message will be removed for all users.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => handleDeleteMessage(messageToDelete)}
+                  className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+                >
+                  Delete Permanently
+                </button>
+                <button 
+                  onClick={() => setMessageToDelete(null)}
+                  className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* New Chat Modal */}
       <AnimatePresence>
@@ -2446,18 +2599,18 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-school-primary to-school-secondary"></div>
-        <div className="px-8 pb-8">
-          <div className="relative -mt-12 mb-6 flex items-end justify-between">
-            <div className="relative group">
-              <div className="w-24 h-24 bg-white rounded-2xl p-1 shadow-lg overflow-hidden">
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-12 px-4 sm:px-6">
+      <div className="bg-white rounded-2xl md:rounded-3xl border border-slate-200 overflow-hidden">
+        <div className="h-24 md:h-32 bg-gradient-to-r from-school-primary to-school-secondary"></div>
+        <div className="px-5 md:px-8 pb-6 md:pb-8">
+          <div className="relative -mt-10 md:-mt-12 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="relative group self-start">
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-2xl p-1 shadow-lg overflow-hidden">
                 {avatar ? (
                   <img src={avatar} alt={user.name} className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
-                    <UserIcon className="w-12 h-12" />
+                    <UserIcon className="w-10 h-10 md:w-12 md:h-12" />
                   </div>
                 )}
               </div>
@@ -2472,13 +2625,13 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
             {!isEditing ? (
               <button 
                 onClick={() => setIsEditing(true)}
-                className="btn-secondary flex items-center gap-2"
+                className="btn-secondary flex items-center gap-2 w-full sm:w-auto"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
               </button>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button 
                   onClick={() => {
                     setIsEditing(false);
@@ -2487,14 +2640,14 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
                     setBio(user.bio || '');
                     setPhone(user.phone || '');
                   }}
-                  className="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleUpdateProfile}
                   disabled={isSaving}
-                  className="btn-primary px-6 py-2 flex items-center gap-2"
+                  className="flex-1 sm:flex-none btn-primary px-6 py-2 flex items-center gap-2"
                 >
                   {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCheck className="w-4 h-4" />}
                   Save Changes
@@ -2503,8 +2656,8 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
             )}
           </div>
 
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+            <div className="flex-1 w-full">
               {isEditing ? (
                 <div className="space-y-1 max-w-sm">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Display Name</label>
@@ -2512,14 +2665,14 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
                     type="text" 
                     value={editedName}
                     onChange={e => setEditedName(e.target.value)}
-                    className="text-3xl font-bold w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1 focus:ring-2 focus:ring-school-primary outline-none"
+                    className="text-2xl md:text-3xl font-bold w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1 focus:ring-2 focus:ring-school-primary outline-none"
                     autoFocus
                   />
                 </div>
               ) : (
-                <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{user.name}</h1>
               )}
-              <p className="text-slate-500 mt-1">{user.email}</p>
+              <p className="text-sm md:text-base text-slate-500 mt-1">{user.email}</p>
               
               {isEditing ? (
                 <div className="mt-4 space-y-4 max-w-md">
@@ -2664,9 +2817,9 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
       } else {
         setError(data.error || 'An unexpected error occurred');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Auth error:', err);
-      setError('Failed to connect to the server');
+      setError(`Connection error: ${err.message || 'Failed to connect to the server'}`);
     }
   };
 

@@ -12,11 +12,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Supabase Configuration
-let supabaseUrl = process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.co";
-if (supabaseUrl.endsWith(".supabase.com")) {
-  supabaseUrl = supabaseUrl.replace(".supabase.com", ".supabase.co");
-}
+const supabaseUrl = (process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.co").trim();
 const supabaseKey = (process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhic2F0ZGZjaGdqdmdla2tjZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzU1NzcsImV4cCI6MjA4ODMxMTU3N30.7lTVZG4N4KUozXF5oNgvRG6yj7DnU0lFaTnP_euKQYI").trim();
+
+console.log("Initializing Supabase with URL:", supabaseUrl);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const clients = new Map<number, WebSocket>();
@@ -80,6 +79,20 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+  // Health Check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { data, error } = await supabase.from("users").select("count").single();
+      res.json({ 
+        status: "ok", 
+        database: error ? "error" : "connected",
+        db_error: error ? error.message : null
+      });
+    } catch (e: any) {
+      res.json({ status: "error", message: e.message });
+    }
+  });
+
   // Auth Routes
   app.post("/api/auth/signup", async (req, res) => {
     const { name, email, password, role } = req.body;
@@ -104,26 +117,33 @@ async function startServer() {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log(`Login attempt for: ${email}`);
+      
       const { data: user, error } = await supabase
         .from("users")
         .select("id, name, email, role, avatar, bio, phone")
         .eq("email", email)
         .eq("password", password)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error("Login error:", error);
-        return res.status(401).json({ error: "Invalid credentials or database error" });
+        console.error("Login database error:", JSON.stringify(error, null, 2));
+        return res.status(500).json({ 
+          error: "Database error occurred",
+          details: error.message 
+        });
       }
 
       if (user) {
+        console.log(`Login successful for: ${email}`);
         res.json(user);
       } else {
-        res.status(401).json({ error: "Invalid credentials" });
+        console.log(`Login failed (invalid credentials) for: ${email}`);
+        res.status(401).json({ error: "Invalid email or password" });
       }
     } catch (e: any) {
       console.error("Server error during login:", e);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Internal server error", message: e.message });
     }
   });
 

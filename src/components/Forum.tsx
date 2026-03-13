@@ -13,7 +13,8 @@ import {
   User as UserIcon,
   Clock,
   Send,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -68,6 +69,7 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
   const [showCreateTopic, setShowCreateTopic] = useState(false);
   const [newTopic, setNewTopic] = useState({ title: '', content: '' });
   const [newReply, setNewReply] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -217,6 +219,16 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     });
   };
 
+  const filteredTopics = topics.filter(t => 
+    t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPosts = posts.filter(p => 
+    p.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.author_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading && view === 'categories') {
     return (
       <div className="flex items-center justify-center h-64">
@@ -226,21 +238,33 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Community Forum</h1>
-          <p className="text-slate-500 dark:text-slate-400">Discuss, share, and connect with the Ndejjean community</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white font-display">Community Forum</h1>
+          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Discuss, share, and connect with the Ndejjean community</p>
         </div>
-        {view === 'topics' && user && (
-          <button 
-            onClick={() => setShowCreateTopic(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-school-primary text-white rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-school-primary/20"
-          >
-            <Plus className="w-5 h-5" />
-            New Topic
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search topics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm focus:ring-2 focus:ring-school-primary outline-none transition-all shadow-sm"
+            />
+          </div>
+          {view === 'topics' && user && (
+            <button 
+              onClick={() => setShowCreateTopic(true)}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-school-primary text-white rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-school-primary/20 whitespace-nowrap"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="sm:inline">New Topic</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -250,7 +274,7 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="grid md:grid-cols-2 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
             {categories.map((cat) => {
               const Icon = iconMap[cat.icon] || MessageCircle;
@@ -305,52 +329,56 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
               <p className="text-sm text-slate-600 dark:text-slate-400">{selectedCategory?.description}</p>
             </div>
 
-            {topics.length === 0 ? (
+            {filteredTopics.length === 0 ? (
               <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
                 <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">No topics yet</h3>
-                <p className="text-slate-500 dark:text-slate-400">Be the first to start a discussion in this category!</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">No topics found</h3>
+                <p className="text-slate-500 dark:text-slate-400">{searchQuery ? 'Try a different search term' : 'Be the first to start a discussion in this category!'}</p>
               </div>
             ) : (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/10 overflow-hidden">
-                {topics.map((topic) => (
+                {filteredTopics.map((topic) => (
                   <button
                     key={topic.id}
                     onClick={() => fetchTopicDetail(topic.id)}
-                    className="w-full flex items-center gap-4 p-4 border-b border-slate-50 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left"
+                    className="w-full flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-b border-slate-50 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left"
                   >
-                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
-                      <UserIcon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-school-primary transition-colors">{topic.title}</h4>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
-                        <div className="flex items-center gap-1">
-                          <span>By {topic.author_name}</span>
-                          <span className="px-1 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[9px] font-bold rounded uppercase tracking-wider">
-                            {topic.author_role}
-                          </span>
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 flex-shrink-0">
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-school-primary transition-colors line-clamp-1">{topic.title}</h4>
+                        <div className="flex items-center gap-3 mt-1 text-[10px] sm:text-xs text-slate-400">
+                          <div className="flex items-center gap-1">
+                            <span>By {topic.author_name}</span>
+                            <span className="px-1 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[8px] sm:text-[9px] font-bold rounded uppercase tracking-wider">
+                              {topic.author_role}
+                            </span>
+                          </div>
+                          <span>•</span>
+                          <span>{formatDate(topic.created_at)}</span>
                         </div>
-                        <span>•</span>
-                        <span>{formatDate(topic.created_at)}</span>
                       </div>
                     </div>
-                    <div className="text-right flex items-center gap-4">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900 dark:text-white">{topic.replies_count}</div>
-                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Replies</div>
+                    <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-4 pl-14 sm:pl-0">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className="text-sm font-bold text-slate-900 dark:text-white">{topic.replies_count}</div>
+                          <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Replies</div>
+                        </div>
+                        {user?.role === 'admin' && (
+                          <button 
+                            onClick={(e) => handleDeleteTopic(e, topic.id)}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                            title="Delete Topic"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                      {user?.role === 'admin' && (
-                        <button 
-                          onClick={(e) => handleDeleteTopic(e, topic.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
-                          title="Delete Topic"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <ChevronRight className="w-5 h-5 text-slate-300 hidden sm:block" />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-slate-300" />
                   </button>
                 ))}
               </div>
@@ -368,7 +396,7 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
           >
             <button 
               onClick={() => fetchTopics(selectedTopic.category_id)}
-              className="flex items-center gap-2 text-sm font-bold text-school-primary dark:text-school-secondary hover:underline mb-4"
+              className="flex items-center gap-2 text-sm font-bold text-school-primary dark:text-school-secondary hover:underline mb-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Topics
@@ -376,37 +404,37 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
 
             {/* Original Topic Post */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/10 overflow-hidden shadow-sm">
-              <div className="p-6 border-b border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{selectedTopic.title}</h2>
-                <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+              <div className="p-5 md:p-6 border-b border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-2">{selectedTopic.title}</h2>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-1">
                     <UserIcon className="w-4 h-4" />
                     <span className="font-bold text-school-primary dark:text-school-secondary">{selectedTopic.author_name}</span>
-                    <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded uppercase tracking-wider ml-1">
+                    <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[9px] md:text-[10px] font-bold rounded uppercase tracking-wider ml-1">
                       {selectedTopic.author_role}
                     </span>
                   </div>
-                  <span>•</span>
+                  <span className="hidden sm:inline">•</span>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {formatDate(selectedTopic.created_at)}
                   </div>
                 </div>
               </div>
-              <div className="p-6 text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+              <div className="p-5 md:p-6 text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
                 {selectedTopic.content}
               </div>
             </div>
 
             {/* Replies */}
-            <div className="space-y-4 ml-4 md:ml-8 border-l-2 border-slate-100 dark:border-white/10 pl-4 md:pl-8">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Replies ({posts.length})</h3>
-              {posts.map((post) => (
-                <div key={post.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/10 p-6 shadow-sm">
+            <div className="space-y-4 sm:ml-4 md:ml-8 border-l-2 border-slate-100 dark:border-white/10 pl-4 md:pl-8">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Replies ({filteredPosts.length})</h3>
+              {filteredPosts.map((post) => (
+                <div key={post.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/10 p-4 md:p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       {post.author_avatar ? (
-                        <img src={post.author_avatar} className="w-8 h-8 rounded-full object-cover" />
+                        <img src={post.author_avatar} className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
                           <UserIcon className="w-4 h-4" />
@@ -414,12 +442,12 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
                       )}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-white text-sm">{post.author_name}</span>
-                          <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded uppercase tracking-wider">
+                          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{post.author_name}</span>
+                          <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[8px] sm:text-[10px] font-bold rounded uppercase tracking-wider">
                             {post.author_role}
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-400">{formatDate(post.created_at)}</span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400">{formatDate(post.created_at)}</span>
                       </div>
                     </div>
                     {user?.role === 'admin' && (
@@ -432,7 +460,7 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
                       </button>
                     )}
                   </div>
-                  <div className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap">
+                  <div className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm whitespace-pre-wrap">
                     {post.content}
                   </div>
                 </div>
