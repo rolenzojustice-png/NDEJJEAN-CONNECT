@@ -33,8 +33,6 @@ import {
   Phone,
   Info,
   ScrollText,
-  Moon,
-  Sun,
   MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -158,13 +156,12 @@ const NotificationDropdown = ({
   );
 };
 
-const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMode }: { 
+const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab }: { 
   label: string, 
   icon: any, 
   items: { id: string, label: string, icon: any }[],
   activeTab: string,
-  setActiveTab: (tab: string) => void,
-  darkMode: boolean
+  setActiveTab: (tab: string) => void
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const isActive = items.some(item => item.id === activeTab);
@@ -220,7 +217,7 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab, darkMo
   );
 };
 
-const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMarkAsRead, onMarkAllAsRead, onDeepLink, darkMode, setDarkMode }: { 
+const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMarkAsRead, onMarkAllAsRead, onDeepLink }: { 
   user: User | null, 
   onLogout: () => void, 
   activeTab: string, 
@@ -228,9 +225,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
   notifications: Notification[],
   onMarkAsRead: (id: number) => void,
   onMarkAllAsRead: () => void,
-  onDeepLink: (link: string) => void,
-  darkMode: boolean,
-  setDarkMode: (dark: boolean) => void
+  onDeepLink: (link: string) => void
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -295,7 +290,6 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               items={communityItems} 
               activeTab={activeTab} 
               setActiveTab={setActiveTab}
-              darkMode={darkMode}
             />
 
             <button
@@ -316,25 +310,9 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               items={profileItems} 
               activeTab={activeTab} 
               setActiveTab={setActiveTab}
-              darkMode={darkMode}
             />
             
             <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2"></div>
-
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
-              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              <motion.div
-                animate={{ x: darkMode ? 24 : 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
-              >
-                {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
-              </motion.div>
-            </button>
 
             {user && (
               <NotificationDropdown 
@@ -450,22 +428,6 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                   {item.label}
                 </button>
               ))}
-
-              <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between px-3">
-                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Dark Mode</span>
-                <button
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="relative flex items-center w-12 h-6 bg-slate-100 dark:bg-white/10 rounded-full p-1 transition-colors duration-300 focus:outline-none"
-                >
-                  <motion.div
-                    animate={{ x: darkMode ? 24 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-white dark:bg-school-secondary rounded-full shadow-sm flex items-center justify-center"
-                  >
-                    {darkMode ? <Moon className="w-2.5 h-2.5 text-school-primary" /> : <Sun className="w-2.5 h-2.5 text-school-secondary" />}
-                  </motion.div>
-                </button>
-              </div>
 
               {user ? (
                 <button 
@@ -3085,19 +3047,6 @@ export default function App() {
   const [toasts, setToasts] = useState<any[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [deepLink, setDeepLink] = useState<{ tab: string, params: Record<string, string> } | null>(null);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('school_dark_mode');
-    return saved === 'true';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('school_dark_mode', String(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('school_user');
@@ -3211,8 +3160,6 @@ export default function App() {
         onMarkAsRead={handleMarkAsRead}
         onMarkAllAsRead={handleMarkAllAsRead}
         onDeepLink={handleDeepLink}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
       />
       
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
