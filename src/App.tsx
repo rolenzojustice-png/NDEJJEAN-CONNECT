@@ -9,7 +9,7 @@ import {
   MessageSquare, 
   Heart,
   Bell,
-  Search,
+  Search as SearchIcon,
   Menu,
   X,
   ChevronRight,
@@ -33,7 +33,11 @@ import {
   Phone,
   Info,
   ScrollText,
-  MessageCircle
+  Moon,
+  Sun,
+  MessageCircle,
+  FileText,
+  Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Forum } from './components/Forum';
@@ -174,8 +178,8 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab }: {
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
           isActive 
-            ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
-            : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+            ? 'text-school-primary bg-school-primary/10' 
+            : 'text-slate-500 hover:text-school-primary hover:bg-slate-50'
         }`}
       >
         <Icon className="w-4 h-4" />
@@ -191,7 +195,7 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab }: {
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
-            className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-white/10 z-50 overflow-hidden p-1"
+            className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden p-1"
           >
             {items.map((item) => (
               <button
@@ -202,8 +206,8 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab }: {
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   activeTab === item.id 
-                    ? 'text-school-primary bg-school-primary/5 dark:text-school-secondary dark:bg-school-secondary/5' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+                    ? 'text-school-primary bg-school-primary/5' 
+                    : 'text-slate-500 hover:bg-slate-50'
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -216,6 +220,7 @@ const NavDropdown = ({ label, icon: Icon, items, activeTab, setActiveTab }: {
     </div>
   );
 };
+
 
 const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMarkAsRead, onMarkAllAsRead, onDeepLink }: { 
   user: User | null, 
@@ -248,7 +253,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -261,10 +266,10 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary hidden sm:inline">
+              <span className="text-xl font-bold font-display text-school-primary hidden sm:inline">
                 THEE NDEJJEAN CONNECT
               </span>
-              <span className="text-xl font-bold font-display text-school-primary dark:text-school-secondary sm:hidden">
+              <span className="text-xl font-bold font-display text-school-primary sm:hidden">
                 TNC
               </span>
             </div>
@@ -276,8 +281,8 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               onClick={() => setActiveTab('home')}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeTab === 'home' 
-                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
-                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+                  ? 'text-school-primary bg-school-primary/10' 
+                  : 'text-slate-500 hover:text-school-primary hover:bg-slate-50'
               }`}
             >
               <HomeIcon className="w-4 h-4" />
@@ -296,8 +301,8 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               onClick={() => setActiveTab('messages')}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeTab === 'messages' 
-                  ? 'text-school-primary bg-school-primary/10 dark:text-school-secondary dark:bg-school-secondary/10' 
-                  : 'text-slate-500 dark:text-slate-400 hover:text-school-primary hover:bg-slate-50 dark:hover:text-school-secondary dark:hover:bg-white/5'
+                  ? 'text-school-primary bg-school-primary/10' 
+                  : 'text-slate-500 hover:text-school-primary hover:bg-slate-50'
               }`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -312,7 +317,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               setActiveTab={setActiveTab}
             />
             
-            <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2"></div>
+            <div className="h-6 w-px bg-slate-200 mx-2"></div>
 
             {user && (
               <NotificationDropdown 
@@ -327,7 +332,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
             {user ? (
               <button 
                 onClick={onLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -363,8 +368,9 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
             )}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-slate-600 hover:text-school-primary p-2"
+              className="flex items-center gap-1 text-slate-600 hover:text-school-primary p-2 transition-colors"
             >
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Menu</span>
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -391,7 +397,10 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                 Home
               </button>
 
-              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Community</div>
+              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-3 h-3" />
+                Community
+              </div>
               {communityItems.map((item) => (
                 <button
                   key={item.id}
@@ -405,7 +414,10 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                 </button>
               ))}
 
-              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account</div>
+              <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <UserIcon className="w-3 h-3" />
+                Account
+              </div>
               <button
                 onClick={() => { setActiveTab('messages'); setIsOpen(false); }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm font-bold ${
@@ -428,6 +440,7 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
                   {item.label}
                 </button>
               ))}
+
 
               {user ? (
                 <button 
@@ -625,7 +638,7 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
   );
 };
 
-const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, string> | null }) => {
+const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: Record<string, string> | null, setActiveTab: (tab: string) => void }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -678,7 +691,10 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
   };
 
   const handleLike = async (postId: number) => {
-    if (!user) return alert('Please sign in to like posts');
+    if (!user) {
+      setActiveTab('auth');
+      return;
+    }
     const res = await fetch(`/api/posts/${postId}/like`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -737,7 +753,10 @@ const Blog = ({ user, deepLink }: { user: User | null, deepLink: Record<string, 
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedPost) return alert('Please sign in to comment');
+    if (!user || !selectedPost) {
+      setActiveTab('auth');
+      return;
+    }
     const res = await fetch(`/api/posts/${selectedPost.id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1504,6 +1523,15 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const [events, setEvents] = useState<SchoolEvent[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [forumTopics, setForumTopics] = useState<any[]>([]);
+  const [forumPosts, setForumPosts] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    users: 0,
+    posts: 0,
+    events: 0,
+    announcements: 0,
+    forumTopics: 0,
+    forumPosts: 0
+  });
   const [loading, setLoading] = useState(true);
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -1516,6 +1544,11 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Always fetch stats
+      const statsRes = await fetch('/api/admin/stats');
+      const statsData = await statsRes.json();
+      setStats(statsData);
+
       if (activeSubTab === 'users') {
         const res = await fetch('/api/users');
         const data = await res.json();
@@ -1536,12 +1569,20 @@ const AdminDashboard = ({ user }: { user: User }) => {
         const res = await fetch('/api/forum/categories');
         const categories = await res.json();
         const allTopics = [];
+        const allPosts = [];
         for (const cat of categories) {
           const tRes = await fetch(`/api/forum/categories/${cat.id}/topics`);
           const tData = await tRes.json();
           allTopics.push(...tData.map((t: any) => ({ ...t, category_name: cat.name })));
+          
+          for (const topic of tData) {
+            const pRes = await fetch(`/api/forum/topics/${topic.id}/posts`);
+            const pData = await pRes.json();
+            allPosts.push(...pData.map((p: any) => ({ ...p, topic_title: topic.title, category_name: cat.name })));
+          }
         }
         setForumTopics(allTopics);
+        setForumPosts(allPosts);
       }
     } catch (e) {
       console.error(e);
@@ -1585,6 +1626,12 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const handleDeleteForumTopic = async (id: number) => {
     if (!confirm('Are you sure you want to delete this forum topic and all its posts?')) return;
     const res = await fetch(`/api/forum/topics/${id}?user_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
+  };
+
+  const handleDeleteForumPost = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this forum post?')) return;
+    const res = await fetch(`/api/forum/posts/${id}?user_id=${user.id}`, { method: 'DELETE' });
     if (res.ok) fetchData();
   };
 
@@ -1645,26 +1692,48 @@ const AdminDashboard = ({ user }: { user: User }) => {
         {/* Main Content Area */}
         <main className="flex-1 space-y-8 min-w-0">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                  <BookOpen className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Posts</p>
-                  <h3 className="text-2xl font-black text-slate-900">{posts.length}</h3>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-50 text-green-600 rounded-2xl">
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Users</p>
-                  <h3 className="text-2xl font-black text-slate-900">{users.length}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Users</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.users}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Blog Posts</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.posts}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Forum Topics</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.forumTopics}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-cyan-50 text-cyan-600 rounded-2xl">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Forum Replies</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.forumPosts}</h3>
                 </div>
               </div>
             </div>
@@ -1674,8 +1743,8 @@ const AdminDashboard = ({ user }: { user: User }) => {
                   <Calendar className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Events</p>
-                  <h3 className="text-2xl font-black text-slate-900">{events.length}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">School Events</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.events}</h3>
                 </div>
               </div>
             </div>
@@ -1685,8 +1754,8 @@ const AdminDashboard = ({ user }: { user: User }) => {
                   <Bell className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Alerts</p>
-                  <h3 className="text-2xl font-black text-slate-900">{announcements.length}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Announcements</p>
+                  <h3 className="text-2xl font-black text-slate-900">{stats.announcements}</h3>
                 </div>
               </div>
             </div>
@@ -1875,34 +1944,90 @@ const AdminDashboard = ({ user }: { user: User }) => {
                 )}
 
                 {activeSubTab === 'forum' && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[600px]">
-                      <thead className="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
-                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
-                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
-                          <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {forumTopics.map(t => (
-                          <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-bold text-slate-700">{t.title}</td>
-                            <td className="px-6 py-4 text-slate-500">{t.category_name}</td>
-                            <td className="px-6 py-4 text-slate-500">{t.author_name}</td>
-                            <td className="px-6 py-4 text-right">
-                              <button 
-                                onClick={() => handleDeleteForumTopic(t.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="space-y-8 p-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-school-primary" />
+                        Forum Topics
+                      </h3>
+                      <div className="overflow-x-auto bg-slate-50 rounded-2xl border border-slate-100">
+                        <table className="w-full text-left min-w-[600px]">
+                          <thead>
+                            <tr className="border-b border-slate-200">
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200">
+                            {forumTopics.length === 0 ? (
+                              <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">No topics found</td></tr>
+                            ) : (
+                              forumTopics.map(t => (
+                                <tr key={t.id} className="hover:bg-white transition-colors">
+                                  <td className="px-6 py-4 font-bold text-slate-700">{t.title}</td>
+                                  <td className="px-6 py-4">
+                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg uppercase">
+                                      {t.category_name}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-slate-500">{t.author_name}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button 
+                                      onClick={() => handleDeleteForumTopic(t.id)}
+                                      className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <MessageCircle className="w-5 h-5 text-school-secondary" />
+                        Forum Replies
+                      </h3>
+                      <div className="overflow-x-auto bg-slate-50 rounded-2xl border border-slate-100">
+                        <table className="w-full text-left min-w-[600px]">
+                          <thead>
+                            <tr className="border-b border-slate-200">
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Content</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Topic</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Author</th>
+                              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200">
+                            {forumPosts.length === 0 ? (
+                              <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">No replies found</td></tr>
+                            ) : (
+                              forumPosts.map(p => (
+                                <tr key={p.id} className="hover:bg-white transition-colors">
+                                  <td className="px-6 py-4 text-slate-700 text-sm max-w-xs truncate">{p.content}</td>
+                                  <td className="px-6 py-4 text-slate-500 text-xs">{p.topic_title}</td>
+                                  <td className="px-6 py-4 text-slate-500">{p.author_name}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button 
+                                      onClick={() => handleDeleteForumPost(p.id)}
+                                      className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3137,7 +3262,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home': return <Home setActiveTab={setActiveTab} />;
-      case 'blog': return <Blog user={user} deepLink={deepLink?.tab === 'blog' ? deepLink.params : null} />;
+      case 'blog': return <Blog user={user} deepLink={deepLink?.tab === 'blog' ? deepLink.params : null} setActiveTab={setActiveTab} />;
       case 'forum': return <Forum user={user} deepLink={deepLink?.tab === 'forum' ? deepLink.params : null} />;
       case 'events': return <Events user={user} deepLink={deepLink?.tab === 'events' ? deepLink.params : null} />;
       case 'messages': return <Messages user={user} deepLink={deepLink?.tab === 'messages' ? deepLink.params : null} />;
@@ -3150,7 +3275,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#050505] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-white transition-colors duration-300">
       <Navbar 
         user={user} 
         onLogout={handleLogout} 
@@ -3269,13 +3394,13 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 text-center"
+              className="relative w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 text-center"
             >
-              <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <LogOut className="w-10 h-10 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Confirm Logout</h2>
-              <p className="text-slate-500 dark:text-slate-400 mb-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Confirm Logout</h2>
+              <p className="text-slate-500 mb-8">
                 Are you sure you want to log out of your account? You'll need to sign in again to access your messages and profile.
               </p>
               <div className="flex flex-col gap-3">
@@ -3287,7 +3412,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="w-full py-4 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95"
+                  className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
                 >
                   Cancel
                 </button>

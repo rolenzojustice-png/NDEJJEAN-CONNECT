@@ -12,8 +12,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Supabase Configuration
-const supabaseUrl = (process.env.SUPABASE_URL || "https://hbsatdfchgjvgekkceeo.supabase.com").trim();
-const supabaseKey = (process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhic2F0ZGZjaGdqdmdla2tjZWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzU1NzcsImV4cCI6MjA4ODMxMTU3N30.7lTVZG4N4KUozXF5oNgvRG6yj7DnU0lFaTnP_euKQYI").trim();
+const supabaseUrl = (process.env.SUPABASE_URL || "").trim();
+const supabaseKey = (process.env.SUPABASE_KEY || "").trim();
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("CRITICAL: SUPABASE_URL or SUPABASE_KEY is missing in environment variables.");
+}
 
 console.log("Initializing Supabase with URL:", supabaseUrl);
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -51,7 +55,46 @@ async function createNotification(userId: number, type: string, content: string,
   }
 }
 
+async function seedDatabase() {
+  try {
+    const adminEmail = "admin@school.edu";
+    const { data: existingAdmin } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", adminEmail)
+      .maybeSingle();
+
+    if (!existingAdmin) {
+      console.log("Seeding default admin user...");
+      const { data: newUser, error: userError } = await supabase
+        .from("users")
+        .insert([{ 
+          name: "School Administrator", 
+          email: adminEmail, 
+          password: "admin", 
+          role: "admin",
+          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+        }])
+        .select()
+        .single();
+
+      if (userError) {
+        console.error("Error seeding admin user:", userError);
+        return;
+      }
+
+      if (newUser) {
+        await supabase.from("user_settings").insert([{ user_id: newUser.id }]);
+        console.log("Admin user seeded successfully with password: 'admin'");
+      }
+    }
+  } catch (e) {
+    console.error("Database seeding failed:", e);
+  }
+}
+
 async function startServer() {
+  await seedDatabase();
   const app = express();
   const server = createServer(app);
   const wss = new WebSocketServer({ server });
@@ -501,6 +544,38 @@ async function startServer() {
   app.post("/api/notifications/read-all/:userId", async (req, res) => {
     await supabase.from("notifications").update({ is_read: 1 }).eq("user_id", req.params.userId);
     res.json({ success: true });
+  });
+
+  // Admin Stats Route
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const [
+        { count: usersCount },
+        { count: postsCount },
+        { count: eventsCount },
+        { count: announcementsCount },
+        { count: forumTopicsCount },
+        { count: forumPostsCount }
+      ] = await Promise.all([
+        supabase.from("users").select("*", { count: 'exact', head: true }),
+        supabase.from("posts").select("*", { count: 'exact', head: true }),
+        supabase.from("events").select("*", { count: 'exact', head: true }),
+        supabase.from("announcements").select("*", { count: 'exact', head: true }),
+        supabase.from("forum_topics").select("*", { count: 'exact', head: true }),
+        supabase.from("forum_posts").select("*", { count: 'exact', head: true })
+      ]);
+
+      res.json({
+        users: usersCount || 0,
+        posts: postsCount || 0,
+        events: eventsCount || 0,
+        announcements: announcementsCount || 0,
+        forumTopics: forumTopicsCount || 0,
+        forumPosts: forumPostsCount || 0
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // Forum Routes
