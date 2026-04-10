@@ -2892,18 +2892,21 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
     if (!user) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/users/${user.id}/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editedName, avatar, bio, phone })
-      });
-      if (res.ok) {
-        const updatedUser = await res.json();
+      const { data: updatedUser, error } = await supabase
+        .from("users")
+        .update({ name: editedName, avatar, bio, phone })
+        .eq("id", user.id)
+        .select("id, name, email, role, avatar, bio, phone")
+        .single();
+
+      if (error) throw error;
+      
+      if (updatedUser) {
         onUpdateUser(updatedUser);
         localStorage.setItem('school_user', JSON.stringify(updatedUser));
         setIsEditing(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update profile:', error);
     } finally {
       setIsSaving(false);
@@ -3434,7 +3437,23 @@ const Toasts = ({ toasts, onRemove }: { toasts: any[], onRemove: (id: number) =>
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'home';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setActiveTab(hash);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    window.location.hash = activeTab;
+  }, [activeTab]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<any[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
