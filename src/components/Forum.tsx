@@ -19,6 +19,7 @@ import {
   Award
 } from 'lucide-react';
 import { User } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface Category {
   id: number;
@@ -90,9 +91,24 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/forum/categories');
-      const data = await res.json();
-      setCategories(data);
+      const { data: categories, error } = await supabase.from("forum_categories").select("*");
+      if (error) throw error;
+      
+      const formattedCategories = await Promise.all((categories || []).map(async (c) => {
+        const { count: topicsCount } = await supabase.from("forum_topics").select("*", { count: 'exact', head: true }).eq("category_id", c.id);
+        
+        const { data: topics } = await supabase.from("forum_topics").select("id").eq("category_id", c.id);
+        const topicIds = (topics || []).map(t => t.id);
+        const { count: postsCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).in("topic_id", topicIds);
+
+        return {
+          ...c,
+          topics_count: topicsCount || 0,
+          posts_count: postsCount || 0
+        };
+      }));
+
+      setCategories(formattedCategories);
       setLoading(false);
     } catch (e) {
       console.error(e);
@@ -102,9 +118,25 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
   const fetchTopics = async (categoryId: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/forum/categories/${categoryId}/topics`);
-      const data = await res.json();
-      setTopics(data);
+      const { data: topics, error } = await supabase
+        .from("forum_topics")
+        .select("*, author:users!user_id(name, role)")
+        .eq("category_id", categoryId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const formattedTopics = await Promise.all((topics || []).map(async (t) => {
+        const { count: repliesCount } = await supabase.from("forum_posts").select("*", { count: 'exact', head: true }).eq("topic_id", t.id);
+        return {
+          ...t,
+          author_name: t.author?.name,
+          author_role: t.author?.role,
+          replies_count: repliesCount || 0
+        };
+      }));
+
+      setTopics(formattedTopics);
       const cat = categories.find(c => c.id === categoryId);
       if (cat) setSelectedCategory(cat);
       setView('topics');
@@ -117,15 +149,35 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
   const fetchTopicDetail = async (topicId: number) => {
     setLoading(true);
     try {
-      const [topicRes, postsRes] = await Promise.all([
-        fetch(`/api/forum/topics/${topicId}`),
-        fetch(`/api/forum/topics/${topicId}/posts`)
-      ]);
-      const topicData = await topicRes.json();
-      const postsData = await postsRes.json();
-      setSelectedTopic(topicData);
-      setPosts(postsData);
-      setView('topic');
+      const { data: topic } = await supabase
+        .from("forum_topics")
+        .select("*, author:users!user_id(name, role, avatar)")
+        .eq("id", topicId)
+        .single();
+
+      if (topic) {
+        const { data: posts } = await supabase
+          .from("forum_posts")
+          .select("*, author:users!user_id(name, role, avatar)")
+          .eq("topic_id", topicId)
+          .order("created_at", { ascending: true });
+
+        const formattedPosts = posts?.map(p => ({
+          ...p,
+          author_name: p.author?.name,
+          author_role: p.author?.role,
+          author_avatar: p.author?.avatar
+        }));
+
+        setSelectedTopic({
+          ...topic,
+          author_name: topic.author?.name,
+          author_role: topic.author?.role,
+          author_avatar: topic.author?.avatar
+        });
+        setPosts(formattedPosts || []);
+        setView('topic');
+      }
       setLoading(false);
     } catch (e) {
       console.error(e);
@@ -136,20 +188,22 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     e.preventDefault();
     if (!user || !selectedCategory) return;
     try {
-      const res = await fetch('/api/forum/topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category_id: selectedCategory.id,
-          user_id: user.id,
-          ...newTopic
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const { data: topic, error } = await supabase
+        .from("forum_topics")
+        .insert([{ 
+          category_id: selectedCategory.id, 
+          user_id: user.id, 
+          title: newTopic.title, 
+          content: newTopic.content 
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (topic) {
         setShowCreateTopic(false);
         setNewTopic({ title: '', content: '' });
-        fetchTopicDetail(data.id);
+        fetchTopicDetail(topic.id);
       }
     } catch (e) {
       console.error(e);
@@ -160,19 +214,17 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     e.preventDefault();
     if (!user || !selectedTopic || !newReply.trim()) return;
     try {
-      const res = await fetch('/api/forum/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic_id: selectedTopic.id,
-          user_id: user.id,
-          content: newReply
-        })
-      });
-      if (res.ok) {
-        setNewReply('');
-        fetchTopicDetail(selectedTopic.id);
-      }
+      const { error } = await supabase
+        .from("forum_posts")
+        .insert([{ 
+          topic_id: selectedTopic.id, 
+          user_id: user.id, 
+          content: newReply 
+        }]);
+
+      if (error) throw error;
+      setNewReply('');
+      fetchTopicDetail(selectedTopic.id);
     } catch (e) {
       console.error(e);
     }
@@ -184,12 +236,10 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     if (!confirm('Are you sure you want to delete this topic and all its posts?')) return;
 
     try {
-      const res = await fetch(`/api/forum/topics/${topicId}?user_id=${user.id}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        if (selectedCategory) fetchTopics(selectedCategory.id);
-      }
+      await supabase.from("forum_posts").delete().eq("topic_id", topicId);
+      const { error } = await supabase.from("forum_topics").delete().eq("id", topicId);
+      if (error) throw error;
+      if (selectedCategory) fetchTopics(selectedCategory.id);
     } catch (e) {
       console.error(e);
     }
@@ -200,12 +250,9 @@ export const Forum = ({ user, deepLink }: { user: User | null, deepLink: any }) 
     if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
-      const res = await fetch(`/api/forum/posts/${postId}?user_id=${user.id}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        if (selectedTopic) fetchTopicDetail(selectedTopic.id);
-      }
+      const { error } = await supabase.from("forum_posts").delete().eq("id", postId);
+      if (error) throw error;
+      if (selectedTopic) fetchTopicDetail(selectedTopic.id);
     } catch (e) {
       console.error(e);
     }
