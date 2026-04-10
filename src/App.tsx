@@ -41,7 +41,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Forum } from './components/Forum';
-import { supabase, createNotification } from './lib/supabase';
 import { 
   format, 
   startOfMonth, 
@@ -318,20 +317,6 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab, notifications, onMark
               setActiveTab={setActiveTab}
             />
             
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'admin' 
-                    ? 'text-school-primary bg-school-primary/10' 
-                    : 'text-slate-500 hover:text-school-primary hover:bg-slate-50'
-                }`}
-              >
-                <Shield className="w-4 h-4" />
-                Admin
-              </button>
-            )}
-            
             <div className="h-6 w-px bg-slate-200 mx-2"></div>
 
             {user && (
@@ -487,16 +472,13 @@ const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    const fetchAnnouncements = async () => {
-      try {
-        const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
-        setAnnouncements(data || []);
-      } catch (e) {
-        console.error(e);
-      }
-      setLoading(false);
-    };
-    fetchAnnouncements();
+    fetch('/api/announcements')
+      .then(res => res.json())
+      .then(data => {
+        setAnnouncements(data);
+        setLoading(false);
+      })
+      .catch(err => console.error(err));
   }, []);
 
   return (
@@ -665,8 +647,6 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState({ content: '', image: '' });
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
-  const [editCommentContent, setEditCommentContent] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const POSTS_PER_PAGE = 5;
@@ -689,31 +669,10 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
   }, [deepLink, posts]);
 
   const fetchPosts = async () => {
-    try {
-      const { data: posts, error } = await supabase
-        .from("posts")
-        .select(`
-          *,
-          author:users!author_id(name),
-          likes_count:likes(count),
-          comments_count:comments(count)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      const formattedPosts = posts.map(p => ({
-        ...p,
-        author_name: p.author?.name,
-        likes_count: p.likes_count?.[0]?.count || 0,
-        comments_count: p.comments_count?.[0]?.count || 0
-      }));
-
-      setPosts(formattedPosts);
-      setLoading(false);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch('/api/posts');
+    const data = await res.json();
+    setPosts(data);
+    setLoading(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'post' | 'comment') => {
@@ -736,23 +695,12 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
       setActiveTab('auth');
       return;
     }
-    try {
-      const { data: existingLike } = await supabase
-        .from("likes")
-        .select("*")
-        .eq("post_id", postId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (existingLike) {
-        await supabase.from("likes").delete().eq("post_id", postId).eq("user_id", user.id);
-      } else {
-        await supabase.from("likes").insert([{ post_id: postId, user_id: user.id }]);
-      }
-      fetchPosts();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/posts/${postId}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id })
+    });
+    if (res.ok) fetchPosts();
   };
 
   const startEditPost = (post: Post) => {
@@ -766,19 +714,20 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
     e.preventDefault();
     if (!user || (user.role !== 'admin' && user.role !== 'teacher')) return;
     
-    try {
-      if (editingPostId) {
-        await supabase.from("posts").update({ ...newPost }).eq("id", editingPostId);
-      } else {
-        await supabase.from("posts").insert([{ ...newPost, author_id: user.id }]);
-      }
-      
+    const method = editingPostId ? 'PUT' : 'POST';
+    const url = editingPostId ? `/api/posts/${editingPostId}` : '/api/posts';
+    
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newPost, author_id: user.id })
+    });
+    
+    if (res.ok) {
       setNewPost({ title: '', content: '', image: '' });
       setEditingPostId(null);
       setShowCreate(false);
       fetchPosts();
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -786,32 +735,20 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
     if (!user || (user.role !== 'admin' && user.role !== 'teacher')) return;
     if (!confirm('Are you sure you want to delete this post?')) return;
     
-    try {
-      await supabase.from("posts").delete().eq("id", postId);
+    const res = await fetch(`/api/posts/${postId}?admin_id=${user.id}`, {
+      method: 'DELETE'
+    });
+    
+    if (res.ok) {
       fetchPosts();
-    } catch (e) {
-      console.error(e);
     }
   };
 
   const openComments = async (post: Post) => {
     setSelectedPost(post);
-    try {
-      const { data: comments } = await supabase
-        .from("comments")
-        .select("*, user:users!user_id(name)")
-        .eq("post_id", post.id)
-        .order("created_at", { ascending: true });
-
-      const formattedComments = comments?.map(c => ({
-        ...c,
-        user_name: c.user?.name
-      }));
-
-      setComments(formattedComments || []);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/posts/${post.id}/comments`);
+    const data = await res.json();
+    setComments(data);
   };
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -820,50 +757,15 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
       setActiveTab('auth');
       return;
     }
-    try {
-      await supabase.from("comments").insert([{ post_id: selectedPost.id, user_id: user.id, content: newComment.content, image: newComment.image }]);
-      
-      // Notify post author
-      const { data: post } = await supabase.from("posts").select("author_id, title").eq("id", selectedPost.id).single();
-      if (post && post.author_id !== user.id) {
-        await createNotification(post.author_id, 'comment', `${user.name} commented on your post: ${post.title}`, `blog?post_id=${selectedPost.id}`);
-      }
-
+    const res = await fetch(`/api/posts/${selectedPost.id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id, content: newComment.content, image: newComment.image })
+    });
+    if (res.ok) {
       setNewComment({ content: '', image: '' });
       openComments(selectedPost);
       fetchPosts();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDeleteComment = async (commentId: number) => {
-    if (!user || user.role !== 'admin') return;
-    if (!confirm('Are you sure you want to delete this comment?')) return;
-    
-    try {
-      await supabase.from("comments").delete().eq("id", commentId);
-      if (selectedPost) {
-        openComments(selectedPost);
-        fetchPosts();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleUpdateComment = async (commentId: number) => {
-    if (!user || user.role !== 'admin') return;
-    
-    try {
-      await supabase.from("comments").update({ content: editCommentContent }).eq("id", commentId);
-      if (selectedPost) {
-        setEditingCommentId(null);
-        setEditCommentContent('');
-        openComments(selectedPost);
-      }
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -1147,61 +1049,12 @@ const Blog = ({ user, deepLink, setActiveTab }: { user: User | null, deepLink: R
                   <p className="text-center text-slate-500 py-8">No comments yet. Be the first to share your thoughts!</p>
                 ) : (
                   comments.map(comment => (
-                    <div key={comment.id} className="bg-slate-50 p-4 rounded-2xl group relative">
+                    <div key={comment.id} className="bg-slate-50 p-4 rounded-2xl">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-bold text-sm">{comment.user_name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400">{new Date(comment.created_at).toLocaleDateString()}</span>
-                          {user?.role === 'admin' && (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={() => {
-                                  setEditingCommentId(comment.id);
-                                  setEditCommentContent(comment.content);
-                                }}
-                                className="p-1 text-slate-400 hover:text-school-primary"
-                                title="Edit Comment"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="p-1 text-slate-400 hover:text-red-500"
-                                title="Delete Comment"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <span className="text-xs text-slate-400">{new Date(comment.created_at).toLocaleDateString()}</span>
                       </div>
-                      
-                      {editingCommentId === comment.id ? (
-                        <div className="space-y-2">
-                          <textarea 
-                            className="w-full p-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-school-primary outline-none"
-                            value={editCommentContent}
-                            onChange={e => setEditCommentContent(e.target.value)}
-                          />
-                          <div className="flex justify-end gap-2">
-                            <button 
-                              onClick={() => setEditingCommentId(null)}
-                              className="px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg"
-                            >
-                              Cancel
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateComment(comment.id)}
-                              className="px-3 py-1 text-xs font-bold bg-school-primary text-white rounded-lg"
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-slate-700 text-sm mb-2">{comment.content}</p>
-                      )}
-
+                      <p className="text-slate-700 text-sm mb-2">{comment.content}</p>
                       {comment.image && (
                         <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 max-w-[200px]">
                           <img src={comment.image} alt="Comment" className="w-full h-auto" referrerPolicy="no-referrer" />
@@ -1286,14 +1139,10 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
   }, [deepLink, events]);
 
   const fetchEvents = async () => {
-    try {
-      const { data: events, error } = await supabase.from("events").select("*").order("date", { ascending: true });
-      if (error) throw error;
-      setEvents(events || []);
-      setLoading(false);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch('/api/events');
+    const data = await res.json();
+    setEvents(data);
+    setLoading(false);
   };
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -1385,38 +1234,30 @@ const Events = ({ user, deepLink }: { user: User | null, deepLink: Record<string
     e.preventDefault();
     if (!user || (user.role !== 'admin' && user.role !== 'teacher')) return;
     
-    try {
-      if (editingEvent) {
-        await supabase.from("events").update({ ...formData }).eq("id", editingEvent.id);
-      } else {
-        const { data: event } = await supabase.from("events").insert([{ ...formData }]).select().single();
-        if (event) {
-          // Notify all users about new event
-          const { data: users } = await supabase.from("users").select("id").neq("id", user.id);
-          users?.forEach(u => {
-            createNotification(u.id, 'event', `New school event: ${formData.title}`, `events?event_id=${event.id}`);
-          });
-        }
-      }
-      
+    const method = editingEvent ? 'PUT' : 'POST';
+    const url = editingEvent ? `/api/events/${editingEvent.id}` : '/api/events';
+    
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...formData, user_id: user.id })
+    });
+    
+    if (res.ok) {
       setFormData({ title: '', description: '', date: '', time: '', location: '' });
       setShowCreate(false);
       setEditingEvent(null);
       fetchEvents();
-    } catch (e) {
-      console.error(e);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
     if (!user || (user.role !== 'admin' && user.role !== 'teacher')) return;
-    try {
-      await supabase.from("events").delete().eq("id", id);
-      fetchEvents();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/events/${id}?user_id=${user?.id}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) fetchEvents();
   };
 
   const addToCalendar = (event: SchoolEvent) => {
@@ -1683,14 +1524,6 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [forumTopics, setForumTopics] = useState<any[]>([]);
   const [forumPosts, setForumPosts] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    users: 0,
-    posts: 0,
-    events: 0,
-    announcements: 0,
-    forumTopics: 0,
-    forumPosts: 0
-  });
   const [loading, setLoading] = useState(true);
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -1703,43 +1536,40 @@ const AdminDashboard = ({ user }: { user: User }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch stats using direct counts
-      const [{ count: userCount }, { count: postCount }, { count: eventCount }, { count: announcementCount }, { count: topicCount }, { count: forumPostCount }] = await Promise.all([
-        supabase.from("users").select("*", { count: 'exact', head: true }),
-        supabase.from("posts").select("*", { count: 'exact', head: true }),
-        supabase.from("events").select("*", { count: 'exact', head: true }),
-        supabase.from("announcements").select("*", { count: 'exact', head: true }),
-        supabase.from("forum_topics").select("*", { count: 'exact', head: true }),
-        supabase.from("forum_posts").select("*", { count: 'exact', head: true })
-      ]);
-
-      setStats({
-        users: userCount || 0,
-        posts: postCount || 0,
-        events: eventCount || 0,
-        announcements: announcementCount || 0,
-        forumTopics: topicCount || 0,
-        forumPosts: forumPostCount || 0
-      });
-
       if (activeSubTab === 'users') {
-        const { data } = await supabase.from("users").select("*").order("name");
-        setUsers(data || []);
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        setUsers(data);
       } else if (activeSubTab === 'posts') {
-        const { data } = await supabase.from("posts").select("*, author:users!author_id(name)").order("created_at", { ascending: false });
-        setPosts(data?.map(p => ({ ...p, author_name: p.author?.name })) || []);
+        const res = await fetch('/api/posts');
+        const data = await res.json();
+        setPosts(data);
       } else if (activeSubTab === 'events') {
-        const { data } = await supabase.from("events").select("*").order("date", { ascending: true });
-        setEvents(data || []);
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        setEvents(data);
       } else if (activeSubTab === 'announcements') {
-        const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
-        setAnnouncements(data || []);
+        const res = await fetch('/api/announcements');
+        const data = await res.json();
+        setAnnouncements(data);
       } else if (activeSubTab === 'forum') {
-        const { data: topics } = await supabase.from("forum_topics").select("*, category:forum_categories!category_id(name), author:users!author_id(name)").order("created_at", { ascending: false });
-        const { data: forumPosts } = await supabase.from("forum_posts").select("*, topic:forum_topics!topic_id(title), author:users!author_id(name)").order("created_at", { ascending: false });
-        
-        setForumTopics(topics?.map(t => ({ ...t, category_name: t.category?.name, author_name: t.author?.name })) || []);
-        setForumPosts(forumPosts?.map(p => ({ ...p, topic_title: p.topic?.title, author_name: p.author?.name })) || []);
+        const res = await fetch('/api/forum/categories');
+        const categories = await res.json();
+        const allTopics = [];
+        const allPosts = [];
+        for (const cat of categories) {
+          const tRes = await fetch(`/api/forum/categories/${cat.id}/topics`);
+          const tData = await tRes.json();
+          allTopics.push(...tData.map((t: any) => ({ ...t, category_name: cat.name })));
+          
+          for (const topic of tData) {
+            const pRes = await fetch(`/api/forum/topics/${topic.id}/posts`);
+            const pData = await pRes.json();
+            allPosts.push(...pData.map((p: any) => ({ ...p, topic_title: topic.title, category_name: cat.name })));
+          }
+        }
+        setForumTopics(allTopics);
+        setForumPosts(allPosts);
       }
     } catch (e) {
       console.error(e);
@@ -1749,94 +1579,65 @@ const AdminDashboard = ({ user }: { user: User }) => {
 
   const handleDeleteUser = async (id: number) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    try {
-      await supabase.from("users").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/users/${id}?admin_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleChangeRole = async (id: number, newRole: string) => {
-    try {
-      await supabase.from("users").update({ role: newRole }).eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/users/${id}/role`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_id: user.id, role: newRole })
+    });
+    if (res.ok) fetchData();
   };
 
   const handleDeletePost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
-    try {
-      await supabase.from("posts").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/posts/${id}?admin_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleDeleteEvent = async (id: number) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    try {
-      await supabase.from("events").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/events/${id}?user_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleDeleteAnnouncement = async (id: number) => {
     if (!confirm('Are you sure you want to delete this announcement?')) return;
-    try {
-      await supabase.from("announcements").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/announcements/${id}?admin_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleDeleteForumTopic = async (id: number) => {
     if (!confirm('Are you sure you want to delete this forum topic and all its posts?')) return;
-    try {
-      await supabase.from("forum_topics").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/forum/topics/${id}?user_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleDeleteForumPost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this forum post?')) return;
-    try {
-      await supabase.from("forum_posts").delete().eq("id", id);
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/forum/posts/${id}?user_id=${user.id}`, { method: 'DELETE' });
+    if (res.ok) fetchData();
   };
 
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (editingAnnouncement) {
-        await supabase.from("announcements").update({ ...announcementForm }).eq("id", editingAnnouncement.id);
-      } else {
-        const { data: announcement } = await supabase.from("announcements").insert([{ ...announcementForm }]).select().single();
-        if (announcement) {
-          // Notify all users
-          const { data: users } = await supabase.from("users").select("id").neq("id", user.id);
-          users?.forEach(u => {
-            createNotification(u.id, 'announcement', `New announcement: ${announcementForm.title}`, `home`);
-          });
-        }
-      }
+    const method = editingAnnouncement ? 'PUT' : 'POST';
+    const url = editingAnnouncement ? `/api/announcements/${editingAnnouncement.id}` : '/api/announcements';
+    
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...announcementForm, user_id: user.id })
+    });
+
+    if (res.ok) {
       setShowCreateAnnouncement(false);
       setEditingAnnouncement(null);
       setAnnouncementForm({ title: '', content: '', tag: 'General', icon: '📢' });
       fetchData();
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -1878,48 +1679,26 @@ const AdminDashboard = ({ user }: { user: User }) => {
         {/* Main Content Area */}
         <main className="flex-1 space-y-8 min-w-0">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-50 text-green-600 rounded-2xl">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Users</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.users}</h3>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                   <BookOpen className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Blog Posts</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.posts}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Posts</p>
+                  <h3 className="text-2xl font-black text-slate-900">{posts.length}</h3>
                 </div>
               </div>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
-                  <MessageSquare className="w-6 h-6" />
+                <div className="p-3 bg-green-50 text-green-600 rounded-2xl">
+                  <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Forum Topics</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.forumTopics}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-cyan-50 text-cyan-600 rounded-2xl">
-                  <MessageCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Forum Replies</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.forumPosts}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Users</p>
+                  <h3 className="text-2xl font-black text-slate-900">{users.length}</h3>
                 </div>
               </div>
             </div>
@@ -1929,8 +1708,8 @@ const AdminDashboard = ({ user }: { user: User }) => {
                   <Calendar className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">School Events</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.events}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Events</p>
+                  <h3 className="text-2xl font-black text-slate-900">{events.length}</h3>
                 </div>
               </div>
             </div>
@@ -1940,8 +1719,8 @@ const AdminDashboard = ({ user }: { user: User }) => {
                   <Bell className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Announcements</p>
-                  <h3 className="text-2xl font-black text-slate-900">{stats.announcements}</h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Alerts</p>
+                  <h3 className="text-2xl font-black text-slate-900">{announcements.length}</h3>
                 </div>
               </div>
             </div>
@@ -2380,38 +2159,26 @@ const Settings = ({ user }: { user: User | null }) => {
   }, [user]);
 
   const fetchSettings = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase.from("user_settings").select("*").eq("user_id", user.id).maybeSingle();
-      if (error) throw error;
-      if (data) {
-        setSettings({
-          notify_messages: !!data.notify_messages,
-          notify_events: !!data.notify_events,
-          notify_blog: !!data.notify_blog
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/settings/${user?.id}`);
+    const data = await res.json();
+    setSettings({
+      notify_messages: !!data.notify_messages,
+      notify_events: !!data.notify_events,
+      notify_blog: !!data.notify_blog
+    });
     setLoading(false);
   };
 
   const handleSave = async () => {
-    if (!user) return;
     setSaving(true);
     setMessage('');
-    try {
-      const { error } = await supabase.from("user_settings").upsert({ 
-        user_id: user.id,
-        ...settings 
-      });
-      if (error) throw error;
+    const res = await fetch(`/api/settings/${user?.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    if (res.ok) {
       setMessage('Settings saved successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (e) {
-      console.error(e);
-      setMessage('Failed to save settings');
     }
     setSaving(false);
   };
@@ -2540,70 +2307,35 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
   }, [user, activeConversation]);
 
   const fetchConversations = async () => {
-    if (!user) return;
-    try {
-      // This is a complex query to get unique conversations
-      // We'll fetch all messages where user is sender or receiver
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*, sender:users!sender_id(name), receiver:users!receiver_id(name)")
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      const convMap = new Map();
-      data?.forEach(m => {
-        const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
-        const otherName = m.sender_id === user.id ? m.receiver?.name : m.sender?.name;
-        if (!convMap.has(otherId)) {
-          convMap.set(otherId, {
-            other_user_id: otherId,
-            other_user_name: otherName,
-            last_message: m.content,
-            last_message_at: m.created_at
-          });
-        }
-      });
-      setConversations(Array.from(convMap.values()));
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/messages/conversations/${user?.id}`);
+    const data = await res.json();
+    setConversations(data);
     setLoading(false);
   };
 
   const fetchUsers = async () => {
-    try {
-      const { data } = await supabase.from("users").select("*").neq("id", user?.id).order("name");
-      setUsers(data || []);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    setUsers(data.filter((u: User) => u.id !== user?.id));
   };
 
   const fetchMessages = async (otherId: number) => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`)
-        .order("created_at", { ascending: true });
-      setMessages(data || []);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/messages/${user?.id}/${otherId}`);
+    const data = await res.json();
+    setMessages(data);
   };
 
   const handleDeleteMessage = async (messageId: number) => {
     if (!user || user.role !== 'admin') return;
-    try {
-      await supabase.from("messages").delete().eq("id", messageId);
+
+    const res = await fetch(`/api/messages/${messageId}?user_id=${user.id}`, {
+      method: 'DELETE'
+    });
+
+    if (res.ok) {
       if (activeConversation) fetchMessages(activeConversation);
       fetchConversations();
       setMessageToDelete(null);
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -2611,23 +2343,20 @@ const Messages = ({ user, deepLink }: { user: User | null, deepLink: Record<stri
     e.preventDefault();
     if (!user || !activeConversation || !newMessage.trim()) return;
 
-    try {
-      const { data: msg } = await supabase.from("messages").insert([{
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         sender_id: user.id,
         receiver_id: activeConversation,
         content: newMessage
-      }]).select().single();
+      })
+    });
 
-      if (msg) {
-        setNewMessage('');
-        fetchMessages(activeConversation);
-        fetchConversations();
-        
-        // Notify receiver
-        createNotification(activeConversation, 'message', `New message from ${user.name}`, `messages?user_id=${user.id}`);
-      }
-    } catch (e) {
-      console.error(e);
+    if (res.ok) {
+      setNewMessage('');
+      fetchMessages(activeConversation);
+      fetchConversations();
     }
   };
 
@@ -2892,21 +2621,18 @@ const Profile = ({ user, onLogout, onUpdateUser }: { user: User | null, onLogout
     if (!user) return;
     setIsSaving(true);
     try {
-      const { data: updatedUser, error } = await supabase
-        .from("users")
-        .update({ name: editedName, avatar, bio, phone })
-        .eq("id", user.id)
-        .select("id, name, email, role, avatar, bio, phone")
-        .single();
-
-      if (error) throw error;
-      
-      if (updatedUser) {
+      const res = await fetch(`/api/users/${user.id}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editedName, avatar, bio, phone })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
         onUpdateUser(updatedUser);
         localStorage.setItem('school_user', JSON.stringify(updatedUser));
         setIsEditing(false);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to update profile:', error);
     } finally {
       setIsSaving(false);
@@ -3101,82 +2827,51 @@ const Auth = ({ onLogin, onBack }: { onLogin: (user: User) => void, onBack: () =
     setError('');
     setMessage('');
 
+    let endpoint = '';
+    let payload = {};
+
+    if (mode === 'login') {
+      endpoint = '/api/auth/login';
+      payload = { email: formData.email, password: formData.password };
+    } else if (mode === 'signup') {
+      endpoint = '/api/auth/signup';
+      payload = formData;
+    } else if (mode === 'forgot') {
+      endpoint = '/api/auth/forgot-password';
+      payload = { email: formData.email };
+    } else if (mode === 'reset') {
+      endpoint = '/api/auth/reset-password';
+      payload = { token: formData.token, password: formData.password };
+    }
+
     try {
-      if (mode === 'login') {
-        const { data: user, error } = await supabase
-          .from("users")
-          .select("id, name, email, role, avatar, bio, phone")
-          .eq("email", formData.email)
-          .eq("password", formData.password)
-          .maybeSingle();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json().catch(() => ({ error: 'Server returned an invalid response' }));
 
-        if (error) throw error;
-        if (user) {
-          onLogin(user);
-        } else {
-          setError("Invalid email or password");
+      if (res.ok) {
+        if (mode === 'login' || mode === 'signup') {
+          onLogin(data);
+        } else if (mode === 'forgot') {
+          setMessage(data.message);
+          if (data.token) {
+            setFormData(prev => ({ ...prev, token: data.token }));
+            setMode('reset');
+          }
+        } else if (mode === 'reset') {
+          setMessage(data.message);
+          setMode('login');
         }
-      } else if (mode === 'signup') {
-        const { data: newUser, error } = await supabase
-          .from("users")
-          .insert([{ 
-            name: formData.name, 
-            email: formData.email, 
-            password: formData.password, 
-            role: formData.role || 'student' 
-          }])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Initialize settings
-        await supabase.from("user_settings").insert([{ user_id: newUser.id }]);
-        onLogin(newUser);
-      } else if (mode === 'forgot') {
-        const { data: user } = await supabase
-          .from("users")
-          .select("id")
-          .eq("email", formData.email)
-          .single();
-
-        if (!user) {
-          setError("User not found");
-          return;
-        }
-
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
-
-        await supabase
-          .from("password_resets")
-          .insert([{ email: formData.email, token, expires_at: expiresAt }]);
-
-        setMessage("Reset link generated (Demo: " + token + ")");
-        setFormData(prev => ({ ...prev, token }));
-        setMode('reset');
-      } else if (mode === 'reset') {
-        const { data: reset } = await supabase
-          .from("password_resets")
-          .select("email")
-          .eq("token", formData.token)
-          .gt("expires_at", new Date().toISOString())
-          .single();
-        
-        if (!reset) {
-          setError("Invalid or expired token");
-          return;
-        }
-
-        await supabase.from("users").update({ password: formData.password }).eq("email", reset.email);
-        await supabase.from("password_resets").delete().eq("email", reset.email);
-
-        setMessage("Password updated successfully");
-        setMode('login');
+      } else {
+        setError(data.error || 'An unexpected error occurred');
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError(err.message || 'An unexpected error occurred');
+      setError(`Connection error: ${err.message || 'Failed to connect to the server'}`);
     }
   };
 
@@ -3437,23 +3132,7 @@ const Toasts = ({ toasts, onRemove }: { toasts: any[], onRemove: (id: number) =>
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState(() => {
-    const hash = window.location.hash.replace('#', '');
-    return hash || 'home';
-  });
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash) setActiveTab(hash);
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  useEffect(() => {
-    window.location.hash = activeTab;
-  }, [activeTab]);
+  const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<any[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -3468,70 +3147,51 @@ export default function App() {
     if (user) {
       fetchNotifications();
       
-      // Supabase Realtime for notifications
-      const channel = supabase
-        .channel('schema-db-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            const newToast = {
-              id: Date.now(),
-              ...payload.new
-            };
-            setToasts(prev => [newToast as any, ...prev]);
-            fetchNotifications();
-            
-            // Auto remove toast after 5 seconds
-            setTimeout(() => {
-              setToasts(prev => prev.filter(t => t.id !== newToast.id));
-            }, 5000);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
+      // WebSocket Connection
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}`);
+      
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'auth', userId: user.id }));
       };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'notification') {
+          const newToast = {
+            id: Date.now(),
+            ...data.data
+          };
+          setToasts(prev => [newToast, ...prev]);
+          fetchNotifications();
+          
+          // Auto remove toast after 5 seconds
+          setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== newToast.id));
+          }, 5000);
+        }
+      };
+
+      return () => ws.close();
     }
   }, [user]);
 
   const fetchNotifications = async () => {
     if (!user) return;
-    try {
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setNotifications(data || []);
-    } catch (e) {
-      console.error(e);
-    }
+    const res = await fetch(`/api/notifications/${user.id}`);
+    const data = await res.json();
+    setNotifications(data);
   };
 
   const handleMarkAsRead = async (id: number) => {
-    try {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-      fetchNotifications();
-    } catch (e) {
-      console.error(e);
-    }
+    await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    fetchNotifications();
   };
 
   const handleMarkAllAsRead = async () => {
     if (!user) return;
-    try {
-      await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id);
-      fetchNotifications();
-    } catch (e) {
-      console.error(e);
-    }
+    await fetch(`/api/notifications/read-all/${user.id}`, { method: 'POST' });
+    fetchNotifications();
   };
 
   const handleLogin = (userData: User) => {
